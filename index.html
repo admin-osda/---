@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OSDA - Login Portal</title>
+    
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Sarabun', sans-serif; 
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
+            min-height: 100vh; 
+            margin: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        .view-section { display: none; animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .view-section.active { display: block; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .system-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .system-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px -10px rgba(234, 88, 12, 0.2);
+            border-color: #fdba74;
+        }
+        
+        /* จัดตำแหน่งปุ่ม Google ให้สวยงามเมื่อจอใหญ่ขึ้น */
+        #googleButtonContainer {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="loginView" class="view-section active w-full max-w-lg md:max-w-xl lg:max-w-2xl">
+        <div class="glass-panel rounded-[2rem] p-8 md:p-14 lg:p-16 text-center">
+            
+            <div class="w-24 h-24 md:w-28 md:h-28 bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-orange-500/30">
+                <i data-lucide="shield-check" class="w-12 h-12 md:w-16 md:h-16 text-white"></i>
+            </div>
+            
+            <h1 class="text-4xl md:text-5xl font-black text-slate-800 mb-3 tracking-tight">OSDA <span class="text-orange-600">PORTAL</span></h1>
+            <p class="text-base md:text-lg font-bold text-slate-500 mb-10">ลงชื่อเข้าใช้ด้วยอีเมลสถาบัน</p>
+
+            <div class="flex justify-center mt-8 w-full scale-100 md:scale-110 transform transition-transform">
+                <div id="googleButtonContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="hubView" class="view-section w-full max-w-2xl md:max-w-4xl lg:max-w-5xl">
+        <div class="glass-panel rounded-[2rem] p-8 md:p-12 lg:p-16">
+            
+            <div class="flex flex-col md:flex-row justify-between items-center mb-10 md:mb-12 border-b border-slate-200 pb-8 gap-6 md:gap-0">
+                <div class="flex items-center gap-5">
+                    <img id="userProfilePic" src="" alt="Profile" class="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-orange-100 object-cover shadow-md hidden">
+                    <div class="text-center md:text-left">
+                        <h1 class="text-2xl md:text-3xl font-black text-slate-800 mb-1" id="userNameDisplay">ยินดีต้อนรับ 👋</h1>
+                        <p id="userEmailDisplay" class="text-base md:text-lg font-bold text-orange-600">user@email.com</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" class="w-full md:w-auto px-6 py-3 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 rounded-xl text-base font-bold transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="log-out" class="w-5 h-5"></i> ออกจากระบบ
+                </button>
+            </div>
+
+            <p class="text-base md:text-xl font-bold text-slate-500 mb-8 text-center md:text-left">กรุณาเลือกระบบที่ต้องการเข้าใช้งาน</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                
+                <a href="receiver.html" class="system-card bg-white border-2 border-slate-100 p-8 md:p-12 rounded-[2rem] flex flex-col items-center justify-center gap-6 text-decoration-none group cursor-pointer block h-full">
+                    <div class="w-20 h-20 md:w-28 md:h-28 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-inner group-hover:shadow-blue-500/30 group-hover:scale-110">
+                        <i data-lucide="inbox" class="w-10 h-10 md:w-14 md:h-14"></i>
+                    </div>
+                    <div class="text-center">
+                        <h2 class="text-2xl md:text-3xl font-black text-slate-800">ระบบรับหนังสือ</h2>
+                        <p class="text-sm md:text-base text-slate-500 font-bold mt-2">บันทึกรับเอกสารเข้า</p>
+                    </div>
+                </a>
+
+                <a href="ส่งข้อมูล.html" class="system-card bg-white border-2 border-slate-100 p-8 md:p-12 rounded-[2rem] flex flex-col items-center justify-center gap-6 text-decoration-none group cursor-pointer block h-full">
+                    <div class="w-20 h-20 md:w-28 md:h-28 bg-green-50 text-green-600 rounded-full flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-all duration-300 shadow-inner group-hover:shadow-green-500/30 group-hover:scale-110">
+                        <i data-lucide="send" class="w-10 h-10 md:w-14 md:h-14"></i>
+                    </div>
+                    <div class="text-center">
+                        <h2 class="text-2xl md:text-3xl font-black text-slate-800">ระบบส่งหนังสือ</h2>
+                        <p class="text-sm md:text-base text-slate-500 font-bold mt-2">บันทึกส่งเอกสารออก</p>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // 🚨 ใส่ Client ID ของนายเรียบร้อยแล้ว! 🚨
+        const GOOGLE_CLIENT_ID = '459753648639-ki35pndmckk5lqjgobjeoe804jgs44un.apps.googleusercontent.com'; 
+        const ALLOWED_DOMAIN = '@kmitl.ac.th';
+
+        window.onload = function() {
+            if (sessionStorage.getItem('osda_auth') === 'true') {
+                showHub();
+            } else {
+                initializeGoogleSignIn();
+            }
+        };
+
+        function initializeGoogleSignIn() {
+            if(typeof google === 'undefined') {
+                setTimeout(initializeGoogleSignIn, 100);
+                return;
+            }
+
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleCredentialResponse
+            });
+
+            // สร้างปุ่ม (ปรับให้เข้ากับธีมมากที่สุด)
+            google.accounts.id.renderButton(
+                document.getElementById("googleButtonContainer"),
+                { theme: "filled_blue", size: "large", width: 320, shape: "pill", text: "continue_with" }  
+            );
+        }
+
+       function handleCredentialResponse(response) {
+    try {
+        const responsePayload = jwt_decode(response.credential);
+        const email = responsePayload.email;
+        const name = responsePayload.name;
+        const picture = responsePayload.picture;
+
+    
+        if (email.endsWith(ALLOWED_DOMAIN)) { 
+            
+            sessionStorage.setItem('osda_auth', 'true');
+            sessionStorage.setItem('osda_user_email', email);
+            sessionStorage.setItem('osda_user_name', name);
+            sessionStorage.setItem('osda_user_pic', picture);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'เข้าสู่ระบบสำเร็จ',
+                text: `ยินดีต้อนรับคุณ ${name}`,
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                showHub();
+            });
+
+        } else {
+            // ❌ ถ้าไม่ใช่เมลมอ ให้เด้งเตือนและไม่ให้เข้าหน้า Hub
+            Swal.fire({
+                icon: 'error',
+                title: 'อีเมลไม่ได้รับอนุญาต',
+                text: `ระบบนี้จำกัดการเข้าถึงเฉพาะบุคลากรที่ใช้ ${ALLOWED_DOMAIN} เท่านั้น`,
+                confirmButtonColor: '#ea580c'
+            });
+            
+            // สั่งให้ Google ลืมการล็อคอินครั้งนี้ เพื่อให้เขากดเลือกบัญชีใหม่ได้
+            google.accounts.id.disableAutoSelect();
+        }
+    } catch (error) {
+        console.error("Login Error:", error);
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเข้าสู่ระบบได้' });
+    }
+}
+        function showHub() {
+            document.getElementById('loginView').classList.remove('active');
+            document.getElementById('hubView').classList.add('active');
+            
+            const savedEmail = sessionStorage.getItem('osda_user_email') || '';
+            const savedName = sessionStorage.getItem('osda_user_name') || 'ยินดีต้อนรับ 👋';
+            const savedPic = sessionStorage.getItem('osda_user_pic') || '';
+
+            document.getElementById('userEmailDisplay').innerText = savedEmail;
+            
+            if(savedName !== 'ยินดีต้อนรับ 👋') {
+                document.getElementById('userNameDisplay').innerText = savedName;
+            }
+
+            const profileImg = document.getElementById('userProfilePic');
+            if(savedPic) {
+                profileImg.src = savedPic;
+                profileImg.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('osda_auth');
+            sessionStorage.removeItem('osda_user_email');
+            sessionStorage.removeItem('osda_user_name');
+            sessionStorage.removeItem('osda_user_pic');
+            
+            if(typeof google !== 'undefined') {
+                google.accounts.id.disableAutoSelect();
+            }
+
+            document.getElementById('hubView').classList.remove('active');
+            document.getElementById('loginView').classList.add('active');
+            
+            initializeGoogleSignIn();
+        }
+    </script>
+</body>
+</html>

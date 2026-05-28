@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OSDA - Front Desk Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --kmitl: #ea580c; --dark: #1e293b; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f4f8; margin: 0; padding: 10px 0; }
+        @media (min-width: 640px) { body { padding: 20px 0; } }
+
+        .app-container { max-width: 900px; margin: 0 auto; background-color: #ffffff; min-height: 90vh; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); overflow: hidden; position: relative; }
+        
+        .input-box { 
+            width: 100%; padding: 14px 16px; border-radius: 16px; 
+            border: 1.5px solid #f1f5f9; font-size: 15px; outline: none; 
+            background-color: #f8fafc; color: #334155; transition: all 0.2s ease; 
+        }
+        .input-box:focus:not([readonly]) { 
+            border-color: #fdba74; background: #ffffff; 
+            box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.05); 
+        }
+        .input-box[readonly], .input-box:disabled { 
+            background-color: #f1f5f9; cursor: not-allowed; color: #64748b; 
+            font-weight: bold; border-color: transparent; 
+        }
+        .form-label { 
+            font-size: 11.5px; font-weight: 700; color: #94a3b8; 
+            margin-bottom: 8px; margin-left: 6px; text-transform: uppercase; 
+            letter-spacing: 0.05em; display: block; 
+        }
+        .btn-submit { 
+            background: linear-gradient(135deg, #f97316, #ea580c); 
+            color: white; width: 100%; font-weight: 800; padding: 16px; 
+            border-radius: 16px; border: none; cursor: pointer; margin-top: 10px; 
+            box-shadow: 0 6px 20px -4px rgba(234, 88, 12, 0.4);
+            transition: all 0.2s ease;
+        }
+        .btn-submit:active { transform: scale(0.97); box-shadow: 0 2px 10px -2px rgba(234, 88, 12, 0.3); }
+
+        #f_seq {
+            background-color: #fff7ed !important; 
+            border: 3px solid #ea580c !important; 
+            font-size: 32px !important;
+            font-weight: 900 !important;
+            padding: 16px !important;
+            border-radius: 16px !important;
+            color: #ea580c !important; 
+            width: 100%;
+            text-align: center !important;
+            letter-spacing: 2px !important;
+            box-shadow: 0 4px 10px rgba(234, 88, 12, 0.1) !important;
+            outline: none !important;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+        }
+
+        .page-section { display: none; animation: fadeIn 0.3s ease; }
+        .page-section.active { display: block; }
+        @media (prefers-reduced-motion: reduce) { .page-section { animation: none; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .table-row-hover { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border-left: 4px solid transparent; }
+        .row-normal { background-color: #f8fafc; }
+        .row-normal:hover { background-color: #f0fdf4; border-left: 4px solid #22c55e; transform: scale(1.005); box-shadow: 0 4px 15px rgba(34, 197, 94, 0.08); z-index: 10; position: relative; }
+        .row-backfill { background-color: #fffbeb; }
+        .row-backfill:hover { background-color: #fef3c7; border-left: 4px solid #eab308; transform: scale(1.005); box-shadow: 0 4px 15px rgba(234, 179, 8, 0.08); z-index: 10; position: relative; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* 🌟 CSS เพิ่มเติมสำหรับ Dropdown ประวัติ */
+        .history-dropdown {
+            display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px;
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); z-index: 50; max-height: 220px; overflow-y: auto;
+        }
+        .history-item {
+            padding: 10px 14px; font-size: 13px; color: #475569; cursor: pointer;
+            transition: all 0.15s ease; border-bottom: 1px solid #f1f5f9;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-item:hover { background-color: #fff7ed; color: #ea580c; font-weight: 600; }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+<div class="app-container">
+    
+    <div id="pageHub" class="page-section active" style="position: relative;">
+        
+        <div style="position: absolute; top: 16px; right: 16px; z-index: 999; display: flex; gap: 8px;">
+            <button onclick="handleLogout()" class="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm cursor-pointer hover:bg-red-50 text-red-500 transition-colors" title="ออกจากระบบ / กลับหน้าหลัก">
+                <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+            </button>
+            <button onclick="openSettingsModal()" class="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors" title="ตั้งค่าระบบหลังบ้าน">
+                <i data-lucide="settings" class="text-orange-500 hover:rotate-45 transition-transform duration-300" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        
+        <div class="p-5 sm:p-8 border-b border-slate-100 bg-white">
+           
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+                <div class="pr-32 sm:pr-0">
+                    <h1 class="text-2xl sm:text-3xl font-black text-slate-800 leading-none">
+                        OSDA <span class="text-orange-600">FRONT</span>
+                    </h1>
+                    <p class="text-xs font-bold text-slate-400 mt-1">ระบบลงทะเบียนหนังสือรับ</p>
+                    <div id="currentUserBadge" class="text-[11px] text-emerald-600 font-bold mt-1.5 flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100 w-fit">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="txtCurrentUser">กำลังตรวจสอบสิทธิ์...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <button onclick="openForm('new')" class="bg-emerald-600 hover:bg-emerald-700 text-white p-4 sm:p-6 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-emerald-600/30 transition-all transform hover:-translate-y-1">
+                    <i data-lucide="check-circle" class="w-6 h-6 sm:w-8 sm:h-8"></i>
+                    <span class="text-lg sm:text-xl font-bold">รับหนังสือปกติ</span>
+                </button>
+                <button onclick="openForm('backfill')" class="bg-amber-500 hover:bg-amber-600 text-white p-4 sm:p-6 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-amber-500/30 transition-all transform hover:-translate-y-1">
+                    <i data-lucide="history" class="w-6 h-6 sm:w-8 sm:h-8"></i>
+                    <span class="text-lg sm:text-xl font-bold">รับหนังสือย้อนหลัง</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 p-4 sm:p-8 min-h-[500px]">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b-2 border-slate-800 pb-3 mb-4 sm:mb-6 gap-3 sm:gap-4">
+                <h3 class="text-sm font-black text-slate-500 tracking-wider uppercase flex items-center gap-2">
+                    <i data-lucide="database" class="w-4 h-4"></i> ทะเบียนรับทั้งหมด
+                </h3>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <div class="relative w-full sm:w-80">
+                        <input type="text" id="searchInput" oninput="handleSearch()" placeholder="ค้นหา เรื่อง, ทะเบียน, จาก, ถึง..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none shadow-sm transition-all">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200">
+                <div class="min-w-[800px]">
+                    <div class="bg-[#1e293b] text-white text-xs font-bold p-3 grid grid-cols-12 gap-4 items-center">
+                        <div class="col-span-2 text-center">ทะเบียน</div>
+                        <div class="col-span-4">รายละเอียดหนังสือ</div>
+                        <div class="col-span-2 text-center">สถานะ</div>
+                        <div class="col-span-2 text-center">เวลารับจริง</div>
+                        <div class="col-span-2 text-center">จัดการ</div>
+                    </div>
+                    <div id="recordList" class="flex flex-col divide-y divide-slate-100">
+                    </div>
+                </div>
+            </div>
+            
+            <div id="paginationControls" class="flex justify-between items-center mt-6">
+                <button onclick="changePage(-1)" id="btnPrev" class="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-600 disabled:opacity-30 hover:bg-slate-50 transition shadow-sm">ก่อนหน้า</button>
+                <span id="pageInfo" class="text-xs font-bold text-slate-500 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm"></span>
+                <button onclick="changePage(1)" id="btnNext" class="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-600 disabled:opacity-30 hover:bg-slate-50 transition shadow-sm">ถัดไป</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pageForm" class="page-section bg-white min-h-full pb-10">
+        <div class="flex items-center gap-3 sm:gap-4 p-4 sm:p-6 border-b border-slate-100 sticky top-0 bg-white z-10 shadow-sm">
+            <button onclick="goHome()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-600 transition">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </button>
+            <h2 id="formTitle" class="font-bold text-lg sm:text-xl text-slate-800">บันทึกรับหนังสือ</h2>
+            
+            <div class="ml-auto flex items-center gap-3">
+                <div id="syncHistoryStatus" class="text-[10px] font-bold text-slate-400 flex items-center gap-1 hidden">
+                    <svg class="animate-spin h-3 w-3 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    โหลดประวัติ...
+                </div>
+                <div id="formStatusBadge" class="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider border"></div>
+                <input type="hidden" id="f_status">
+            </div>
+        </div>
+
+        <form id="docForm" onsubmit="saveData(event)" class="p-4 sm:p-8 space-y-4 max-w-2xl mx-auto">
+            <input type="hidden" id="f_id">
+            
+            <div>
+                <div class="flex justify-between items-end mb-1 px-1">
+                    <label class="form-label !mb-0">เลขทะเบียนรับ (อัตโนมัติ)</label>
+                    <button type="button" id="btnReuseSeq" onclick="checkAndReuseDeletedSeq()" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-black flex items-center gap-1 shadow-sm transition-all whitespace-nowrap">
+                        <i data-lucide="list-restart" class="w-3 h-3"></i> ดึงเลขที่ว่าง
+                    </button>
+                </div>
+                <input type="text" id="f_seq" readonly>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label class="form-label">ลงวันที่รับจริง</label><input type="date" id="f_logDate" class="input-box font-bold" required onchange="calculateSequence()"></div>
+                <div><label class="form-label">เวลารับจริง</label><input type="time" id="f_logTime" class="input-box font-bold" required></div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label class="form-label">จาก (ผู้ส่ง)</label><input type="text" id="f_sender" class="input-box" required placeholder="ระบุหน่วยงานหรือผู้ส่ง..."></div>
+                <div><label class="form-label">ถึง (ผู้รับ)</label><input type="text" id="f_receiver" class="input-box" required placeholder="ระบุผู้รับปลายทาง..."></div>
+            </div>
+            
+            <div>
+                <div class="flex justify-between items-center mb-1 px-1">
+                    <label class="form-label !mb-0">เรื่อง</label>
+                </div>
+                <div class="relative flex items-center">
+                    <input type="text" id="f_subject" class="input-box font-bold pr-12" required placeholder="ระบุชื่อเรื่องหรือวัตถุประสงค์..." autocomplete="off">
+                    <button type="button" onclick="toggleHistoryDropdown('subject')" class="absolute right-2 p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors select-none" title="เลือกจากประวัติล่าสุดของศูนย์">
+                        <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                    </button>
+                    <div id="subjectHistoryDropdown" class="history-dropdown"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-1 px-1">
+                    <label class="form-label !mb-0">หมายเหตุ / การปฏิบัติ</label>
+                </div>
+                <div class="relative flex items-center">
+                    <input type="text" id="f_remark" class="input-box pr-12" placeholder="(ถ้ามี)" autocomplete="off">
+                    <button type="button" onclick="toggleHistoryDropdown('remark')" class="absolute right-2 p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors select-none" title="เลือกจากประวัติล่าสุดของศูนย์">
+                        <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                    </button>
+                    <div id="remarkHistoryDropdown" class="history-dropdown"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 pt-4 mt-2">
+                <div><label class="form-label">วันที่บันทึก (System Date)</label><input type="date" id="f_sysDate" class="input-box text-xs !text-slate-400" readonly></div>
+                <div><label class="form-label">เวลาบันทึก (System Time)</label><input type="time" step="1" id="f_sysTime" class="input-box text-xs !text-slate-400" readonly></div>
+            </div>
+            
+            <div class="pt-2">
+                <label class="form-label">แนบรูปภาพเอกสาร (ถ้ามี)</label>
+                <div id="dropZone" class="p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 text-center hover:bg-slate-100 transition-all cursor-pointer relative group" onclick="document.getElementById('f_fileInput').click()">
+                    <input type="file" id="f_fileInput" class="hidden" accept="image/*">
+                    <div class="flex flex-col items-center justify-center gap-3 pointer-events-none">
+                        <div class="bg-white p-3 rounded-full shadow-sm text-blue-500 group-hover:scale-110 transition-transform"><i data-lucide="image" class="w-6 h-6"></i></div>
+                        <div>
+                            <span class="text-sm font-bold text-slate-600 block">คลิก หรือ ลากไฟล์ภาพมาวางที่นี่</span>
+                            <span class="text-[10px] font-medium text-slate-400 mt-1 block">(รองรับเฉพาะไฟล์รูปภาพ JPG, PNG)</span>
+                        </div>
+                    </div>
+                    <img id="imagePreview" src="" class="w-16 h-16 object-cover rounded-xl border border-slate-200 shadow-sm mx-auto mt-4 hidden" onclick="event.stopPropagation()">
+                    <div id="f_fileStatus" class="text-xs text-orange-600 font-bold mt-3"></div>
+                </div>
+                <input type="hidden" id="f_fileUrl" value="ไม่มีไฟล์"> 
+            </div>
+            
+            <button type="submit" id="btnSubmit" class="btn-submit flex justify-center items-center gap-2 mt-6">
+                <i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const isLocalFile = window.location.protocol === 'file:';
+    if (!isLocalFile && sessionStorage.getItem('osda_auth') !== 'true') {
+        window.location.href = 'index.html';
+    }
+
+    // ==========================================
+    // ⚙️ อัปเกรดคีย์แยกจาก Sender เพื่อความเป็นส่วนตัว
+    // ==========================================
+    let WEB_APP_URL = localStorage.getItem('OSDA_RECEIVER_WEB_APP_URL') || "https://script.google.com/macros/s/AKfycbwyc75cZLM2_BY8qFSKEbHku1s8FUqzOZUc6NMcGig6ULAgCF4xXJnjAzPfpa3X0DqtRw/exec";
+    let IMGBB_API_KEY = localStorage.getItem('OSDA_RECEIVER_IMGBB_KEY') || "943c4187147fb6507b61c2c6de104cfa";
+    // ==========================================
+
+    localforage.config({ name: 'OSDA_RECEIVER_STORAGE' });
+    
+    let db = []; 
+    let currentMode = 'hub'; 
+    let realTimeClock; 
+    let currentPage = 1;
+    const itemsPerPage = 6; 
+    let filteredRecords = []; 
+    let recentHistoryData = { subjects: [], remarks: [] }; // 🌟 ตัวแปรเก็บประวัติล่าสุดจากส่วนกลาง
+
+    const USER_MAPPING = {
+        "66040181@kmitl.ac.th": "เขต",
+        "66040190@kmitl.ac.th": "มดแดง",
+        "wiphawan.su@kmitl.ac.th": "พี่วิภาวรรณ สุขดี",
+        "surachai.ra@kmitl.ac.th": "พี่สุรชัย รักเรียน",
+        "nattapong.du@kmitl.ac.th": "พี่ณัฐพงษ์ ดวงดี",
+        "jaruwan.fa@kmitl.ac.th": "พี่จารuวรรณ ใฝ่ดี",
+        "thanapon.ud@kmitl.ac.th": "พี่ธนพล อุดมสุข",
+        "ketsarin.ja@kmitl.ac.th": "พี่เกศรินทร์ เจริญใจ",
+        "pongsatorn.ma@kmitl.ac.th": "พี่พงศธร มั่นคง",
+        "ariya.me@kmitl.ac.th": "พี่อารียา เมตตา",
+        "theerapong.ru@kmitl.ac.th": "พี่ธีรพงศ์ รุ่งเรือง",
+        "siriporn.po@kmitl.ac.th": "พี่ศิริพร พูนผล",
+        "manasweekul.ru@kmitl.ac.th": "พี่มนัสวีกุล เรืองฤทธิ์",
+        "wanwisa.wo@kmitl.ac.th": "พี่วรรณวิษา วงศ์ทอง"
+    };
+
+    function getUserDisplayName(email) {
+        if (!email) return "ไม่ระบุตัวตน";
+        const cleanEmail = email.toLowerCase().trim();
+        if (USER_MAPPING[cleanEmail]) return USER_MAPPING[cleanEmail];
+        return cleanEmail.split('@')[0];
+    }
+
+    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+
+    function openSettingsModal() {
+        Swal.fire({
+            title: '⚙️ ตั้งค่าระบบ',
+            html: `
+                <div class="text-left space-y-3 p-1">
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 mb-1">GOOGLE APPS SCRIPT WEB APP URL (รับหนังสือ)</label>
+                        <input id="swal_web_app_url" class="w-full p-2.5 border rounded-lg text-xs" value="${WEB_APP_URL}">
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-xs font-black text-blue-500 mb-1">IMGBB API KEY (รับหนังสือ)</label>
+                        <input id="swal_imgbb_key" class="w-full p-2.5 border rounded-lg text-xs" value="${IMGBB_API_KEY}">
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'บันทึกค่า',
+            confirmButtonColor: '#ea580c',
+            cancelButtonText: 'ยกเลิก',
+            customClass: { popup: 'rounded-2xl' },
+            preConfirm: () => {
+                return {
+                    webAppUrl: document.getElementById('swal_web_app_url').value.trim(),
+                    imgbbKey: document.getElementById('swal_imgbb_key').value.trim()
+                };
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                if (result.value.webAppUrl) { localStorage.setItem('OSDA_RECEIVER_WEB_APP_URL', result.value.webAppUrl); WEB_APP_URL = result.value.webAppUrl; }
+                if (result.value.imgbbKey !== undefined) { localStorage.setItem('OSDA_RECEIVER_IMGBB_KEY', result.value.imgbbKey); IMGBB_API_KEY = result.value.imgbbKey; }
+                Swal.fire({ icon: 'success', title: 'บันทึกค่าเรียบร้อย!', timer: 1000, showConfirmButton: false });
+                syncDataFromCloud();
+            }
+        });
+    }
+
+    function updateUserBadge() {
+        const userEmail = sessionStorage.getItem('osda_user_email');
+        const txtUser = document.getElementById('txtCurrentUser');
+        if (txtUser) {
+            txtUser.innerText = userEmail ? `ผู้ปฏิบัติงาน: ${getUserDisplayName(userEmail)}` : "ระบบพร้อมใช้งาน (Guest Mode)";
+        }
+    }
+
+    function handleLogout() {
+        sessionStorage.removeItem('osda_auth');
+        sessionStorage.removeItem('osda_user_email');
+        window.location.href = 'index.html'; 
+    }
+
+    function cleanTimeFormat(timeVal) {
+        if (!timeVal) return "";
+        let str = String(timeVal).trim();
+        if (str.includes("GMT") || str.includes("Indochina") || str.includes("1899")) {
+            let match = str.match(/\b\d{1,2}:\d{2}(:\d{2})?\b/);
+            if (match) {
+                let parts = match[0].split(':');
+                return parts[0].padStart(2, '0') + ":" + parts[1].padStart(2, '0');
+            }
+        }
+        let match = str.match(/\b\d{1,2}:\d{2}\b/);
+        if (match) {
+            let parts = match[0].split(':');
+            return parts[0].padStart(2, '0') + ":" + parts[1].padStart(2, '0');
+        }
+        return str;
+    }
+
+    window.onload = async function() {
+        lucide.createIcons();
+        updateUserBadge();
+        await syncDataFromCloud(); 
+        
+        setInterval(async () => {
+            if (currentMode === 'hub') await syncDataFromCloud(true);
+        }, 8000);
+
+        // ปิดดรอปดาวน์ประวัติเมื่อกดพื้นที่อื่นด้านนอก
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.relative')) {
+                hideAllHistoryDropdowns();
+            }
+        });
+    }
+
+    // ==========================================
+    // 🌟 ระบบจัดการประวัติข้อความล่าสุดย้อนหลัง 5 อันดับจากส่วนกลาง
+    // ==========================================
+
+    // 🌟 ฟังก์ชันดึงประวัติจาก Google Sheets มารอไว้ในความจำหน้าเว็บ
+    async function fetchRecentHistoryFromCloud() {
+        // โชว์สถานะกำลังโหลด
+        document.getElementById('syncHistoryStatus').classList.remove('hidden');
+        try {
+            // ส่ง sheetType=receiver ไปบอกหลังบ้านว่าขอดูชีทรับ
+            const response = await fetch(`${WEB_APP_URL}?action=getRecentHistory&sheetType=receiver`);
+            const result = await response.json();
+            if (result.status === 'success') {
+                recentHistoryData.subjects = result.subjects || [];
+                recentHistoryData.remarks = result.remarks || [];
+            }
+        } catch (err) {
+            console.error("Fetch history error:", err);
+        } finally {
+            // ซ่อนสถานะกำลังโหลด
+            document.getElementById('syncHistoryStatus').classList.add('hidden');
+        }
+    }
+
+    // 🌟 ฟังก์ชันเมื่อกดลูกศรให้รายการหล่นลงมา
+    window.toggleHistoryDropdown = function(fieldType) {
+        const dropdownId = fieldType === 'subject' ? 'subjectHistoryDropdown' : 'remarkHistoryDropdown';
+        const dropdown = document.getElementById(dropdownId);
+        
+        if (dropdown.style.display === 'block') {
+            dropdown.style.display = 'none';
+            return;
+        }
+        
+        hideAllHistoryDropdowns();
+        
+        const list = fieldType === 'subject' ? recentHistoryData.subjects : recentHistoryData.remarks;
+        
+        if (list.length === 0) {
+            dropdown.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center font-medium">ยังไม่มีประวัติบันทึกล่าสุดจากส่วนกลาง</div>`;
+        } else {
+            // ดักจับเครื่องหมายตัวอักษรพิเศษก่อนเอาไปใส่ใน onclick
+            dropdown.innerHTML = list.map(text => `
+                <div class="history-item text-ellipsis overflow-hidden whitespace-nowrap" onclick="selectHistoryValue('${fieldType}', \`${text.replace(/`/g, '\\`').replace(/"/g, '&quot;')}\`)">
+                    ${text}
+                </div>
+            `).join('');
+        }
+        dropdown.style.display = 'block';
+    }
+
+    // ฟังก์ชันเมื่อกดเลือกค่าจากประวัติ
+    window.selectHistoryValue = function(fieldType, value) {
+        const inputId = fieldType === 'subject' ? 'f_subject' : 'f_remark';
+        document.getElementById(inputId).value = value;
+        hideAllHistoryDropdowns();
+    }
+
+    // ฟังก์ชันช่วยปิดดรอปดาวน์ทั้งหมด
+    function hideAllHistoryDropdowns() {
+        document.getElementById('subjectHistoryDropdown').style.display = 'none';
+        document.getElementById('remarkHistoryDropdown').style.display = 'none';
+    }
+
+    window.openForm = (mode) => {
+        currentMode = mode;
+        clearInterval(realTimeClock);
+        hideAllHistoryDropdowns();
+        
+        document.getElementById('docForm').reset();
+        document.getElementById('f_id').value = '';
+        document.getElementById('f_fileUrl').value = 'ไม่มีไฟล์';
+        document.getElementById('f_fileStatus').innerText = '';
+        document.getElementById('imagePreview').classList.add('hidden');
+        
+        document.getElementById('f_logDate').readOnly = false;
+        document.getElementById('f_logTime').readOnly = false;
+        
+        document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+        document.getElementById('pageForm').classList.add('active');
+
+        // 🌟 ดึงประวัติจาก Google Sheets รอไว้เลย
+        fetchRecentHistoryFromCloud();
+        
+        const badge = document.getElementById('formStatusBadge');
+        const statusInput = document.getElementById('f_status');
+        
+        const getLocalDateStr = () => {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        };
+
+        if (mode === 'new') {
+            document.getElementById('formTitle').innerText = 'บันทึกรับหนังสือปกติ';
+            statusInput.value = 'รับแล้ว';
+            badge.innerText = 'ปกติ';
+            badge.className = "px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200";
+            
+            const updateClock = () => {
+                const now = new Date();
+                const dStr = getLocalDateStr();
+                const tStr = now.toTimeString().split(' ')[0];
+                
+                document.getElementById('f_sysDate').value = dStr;
+                document.getElementById('f_sysTime').value = tStr;
+                document.getElementById('f_logDate').value = dStr;
+                document.getElementById('f_logTime').value = tStr.substring(0, 5);
+            };
+            updateClock();
+            realTimeClock = setInterval(updateClock, 1000);
+            calculateSequence();
+            
+        } else if (mode === 'backfill') {
+            document.getElementById('formTitle').innerText = 'บันทึกรับหนังสือย้อนหลัง';
+            statusInput.value = 'รับย้อนหลัง';
+            badge.innerText = 'อ้อนหลัง';
+            badge.className = "px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider border bg-amber-100 text-amber-700 border-amber-200";
+            
+            const now = new Date();
+            const dStr = getLocalDateStr();
+            const tStr = now.toTimeString().split(' ')[0];
+
+            document.getElementById('f_sysDate').value = dStr;
+            document.getElementById('f_sysTime').value = tStr;
+            document.getElementById('f_logDate').value = dStr;
+            document.getElementById('f_logTime').value = tStr.substring(0, 5);
+            
+            calculateSequence();
+        }
+    };
+
+    window.goHome = () => {
+        currentMode = 'hub';
+        clearInterval(realTimeClock);
+        hideAllHistoryDropdowns();
+        document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+        document.getElementById('pageHub').classList.add('active');
+        syncDataFromCloud(); 
+    };
+
+    async function syncDataFromCloud(isBackground = false) {
+        const container = document.getElementById('recordList');
+        if(container && !isBackground && db.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-16 text-blue-600 font-bold flex flex-col items-center justify-center gap-3">
+                    <svg class="animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>กำลังซิงก์ข้อมูลทะเบียนรับล่าสุดจากส่วนกลาง...</span>
+                </div>`;
+        }
+
+        try {
+            const response = await fetch(`${WEB_APP_URL}?action=getAll&sheetType=receiver`);
+            const data = await response.json();
+            
+            if (data.status === 'success' && data.data) {
+                db = data.data.map(r => ({
+                    ...r,
+                    creator: String(r.creator || ''),
+                    editor: String(r.editor || ''),
+                    fileUrl: String(r.hasFile || 'ไม่มีไฟล์')
+                })); 
+            } else {
+                db = [];
+            }
+        } catch (err) {
+            console.error("Sync Error:", err);
+        } finally {
+            handleSearch(); 
+        }
+    }
+
+    async function calculateSequence() {
+        if (document.getElementById('f_id').value) return; 
+        const targetDate = document.getElementById('f_logDate').value;
+        if (!targetDate) return;
+
+        const seqEl = document.getElementById('f_seq');
+        seqEl.value = "กำลังดึงเลข..."; 
+
+        try {
+            const response = await fetch(`${WEB_APP_URL}?action=getSeq&sheetType=receiver&mode=${currentMode}&date=${targetDate}`);
+            const data = await response.json();
+            seqEl.value = (data.status === 'success' && data.seq) ? data.seq : "0001"; 
+        } catch (err) {
+            console.error("Calculate Seq Error:", err);
+            seqEl.value = "0001"; 
+        }
+    }
+
+    // Drag & Drop
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('f_fileInput');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('bg-orange-50', 'border-orange-400'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('bg-orange-50', 'border-orange-400'), false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        if (e.dataTransfer.files.length > 0) processFileUpload(e.dataTransfer.files[0]);
+    }, false);
+
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) processFileUpload(this.files[0]);
+    });
+
+    async function processFileUpload(file) {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            Swal.fire({ icon: 'error', title: 'ไฟล์ไม่รองรับ', text: 'ระบบแนบไฟล์นี้ รองรับเฉพาะการอัปโหลดไฟล์รูปภาพ (JPG, PNG) เท่านั้นครับ' });
+            return;
+        }
+        if (!IMGBB_API_KEY) {
+            Swal.fire({ icon: 'warning', title: 'ยังไม่ได้ตั้งค่าคีย์ฝากรูป', text: 'กรุณากดปุ่มฟันเฟือง ⚙️ ด้านขวาบน เพื่อใส่ IMGBB API KEY ของคุณก่อนครับ' });
+            return;
+        }
+
+        document.getElementById('f_fileStatus').innerHTML = '<span class="text-orange-500 font-bold">⌛ กำลังแปลงและส่งรูปภาพขึ้นคลาวด์...</span>';
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async function(e) {
+            const previewImg = document.getElementById('imagePreview');
+            if (previewImg) { previewImg.src = e.target.result; previewImg.classList.remove('hidden'); }
+
+            try {
+                const base64Image = e.target.result.split(',')[1];
+                const formData = new FormData();
+                formData.append('image', base64Image);
+
+                const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.url) {
+                    document.getElementById('f_fileUrl').value = result.data.url;
+                    document.getElementById('f_fileStatus').innerHTML = `✅ แนบไฟล์สำเร็จ! <br><a href="${result.data.url}" target="_blank" onclick="event.stopPropagation()" class="text-blue-600 underline font-black text-[11px] mt-1 inline-block relative z-10">คลิกเพื่อดูรูปภาพแบบเต็ม</a>`;
+                    Toast.fire({ icon: 'success', title: 'อัปโหลดภาพเสร็จสิ้น!' });
+                } else { throw new Error("Upload Failed"); }
+            } catch (err) { 
+                document.getElementById('f_fileStatus').innerHTML = '<span class="text-red-500 font-bold">❌ อัปโหลดล้มเหลว ตรวจสอบ API Key</span>';
+                document.getElementById('imagePreview').classList.add('hidden');
+            } finally { fileInput.value = ""; }
+        };
+    }
+
+    window.saveData = async (e) => {
+        if (e) e.preventDefault(); 
+        hideAllHistoryDropdowns();
+        
+        const getValue = (id) => document.getElementById(id) ? document.getElementById(id).value : "";
+
+        try {
+            Swal.fire({ 
+                title: 'กำลังบันทึกข้อมูล...', 
+                html: '<b class="text-amber-600">กรุณาอย่าเพิ่งปิดหน้าต่างระบบนี้...</b>',
+                allowOutsideClick: false, 
+                didOpen: () => Swal.showLoading() 
+            });
+
+            const id_value = getValue('f_id');
+            const isEdit = id_value ? true : false; 
+            const id = isEdit ? id_value : Date.now();
+            const savedEmail = sessionStorage.getItem('osda_user_email');
+            const userDisplayName = getUserDisplayName(savedEmail);
+
+            const record = {
+                action: isEdit ? 'edit' : 'save',
+                sheetType: 'receiver', 
+                id: id,
+                seq: getValue('f_seq'),
+                sysDate: getValue('f_sysDate'),
+                sysTime: getValue('f_sysTime'),
+                logDate: getValue('f_logDate'),
+                logTime: getValue('f_logTime'),
+                sender: getValue('f_sender'),
+                receiver: getValue('f_receiver'),
+                subject: getValue('f_subject'),
+                remark: getValue('f_remark'),
+                status: getValue('f_status'),
+                user: userDisplayName, 
+                fileUrl: getValue('f_fileUrl') 
+            };
+
+            const response = await fetch(WEB_APP_URL, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                body: JSON.stringify(record)
+            });
+            
+            const result = await response.json();
+            if (result.status === 'success') {
+                await Swal.fire({ icon: 'success', title: 'สำเร็จ!', text: 'บันทึกข้อมูลเรียบร้อยแล้ว', timer: 1500 });
+                goHome(); 
+            } else {
+                throw new Error(result.message || 'ระบบหลังบ้านไม่ตอบสนอง');
+            }
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: 'โปรดเช็ค URL หลังบ้าน (' + String(error) + ')' });
+        }
+    };
+
+    function handleSearch() {
+        const q = document.getElementById('searchInput').value.trim().toLowerCase();
+        filteredRecords = db.filter(r => 
+            (r.subject || '').toLowerCase().includes(q) || 
+            (r.seq || '').toLowerCase().includes(q) ||
+            (r.sender || '').toLowerCase().includes(q) ||
+            (r.receiver || '').toLowerCase().includes(q)
+        ).sort((a,b) => b.id - a.id);
+        renderList();
+    }
+
+    function changePage(step) { currentPage += step; renderList(); }
+
+    // 🌟 ฟังก์ชันแก้บั๊กวันที่เลื่อนตาม Timezone (ก๊อปปี้มาจากฝั่งส่ง)
+    function formatThaiDateShort(dateStr) {
+        if (!dateStr) return "-";
+        // แยกข้อความตรงๆ เพื่อตัดปัญหาเรื่อง Timezone ของเครื่องผู้ใช้งานเลื่อน
+        const parts = String(dateStr).split('-');
+        if (parts.length === 3) {
+            const year = parts[0].substring(2); // เอาเฉพาะ 2 หลักท้าย เช่น 2026 -> 26
+            const month = parts[1];
+            const day = parts[2];
+            return `${day}/${month}/${year}`;
+        }
+        return dateStr;
+    }
+
+    function renderList() {
+        const container = document.getElementById('recordList');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (filteredRecords.length === 0) {
+            container.innerHTML = `<div class="text-center py-12 text-slate-400 font-bold">ไม่พบรายการข้อมูลหนังสือรับ</div>`;
+            document.getElementById('paginationControls').style.display = 'none';
+            return;
+        }
+
+        const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages || 1;
+
+        document.getElementById('paginationControls').style.display = 'flex';
+        document.getElementById('pageInfo').innerText = `หน้า ${currentPage} / ${totalPages}`;
+        document.getElementById('btnPrev').disabled = (currentPage === 1);
+        document.getElementById('btnNext').disabled = (currentPage === totalPages);
+        
+        const start = (currentPage - 1) * itemsPerPage;
+        const pageItems = filteredRecords.slice(start, start + itemsPerPage);
+        
+        pageItems.forEach((r) => {
+            const isBackfill = r.status === 'รับย้อนหลัง' || (r.seq && r.seq.includes('.'));
+            const rowClass = isBackfill ? 'row-backfill' : 'row-normal';
+            const statusBadge = isBackfill 
+                ? `<span class="bg-yellow-100 text-yellow-700 border border-yellow-200 px-3 py-1 rounded-full text-[10px] font-black">รับย้อนหลัง</span>`
+                : `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-[10px] font-black">รับแล้ว</span>`;
+
+            const thaiCreator = getUserDisplayName(r.creator);
+            const thaiEditor = r.editor ? getUserDisplayName(r.editor) : "";
+
+            let userTrackHtml = '';
+            if (thaiCreator) {
+                if (thaiEditor && thaiEditor !== thaiCreator) {
+                    userTrackHtml = `<div class="text-[10px] text-blue-600 font-bold mt-1 flex items-center gap-1 bg-blue-50/70 px-2 py-0.5 rounded border border-blue-100 w-fit"><i data-lucide="user" class="w-3 h-3"></i> บันทึกโดย: ${thaiCreator} (แก้ไขโดย: ${thaiEditor})</div>`;
+                } else {
+                    userTrackHtml = `<div class="text-[10px] text-slate-400 font-medium mt-1 flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> บันทึกโดย: ${thaiCreator}</div>`;
+                }
+            }
+            
+            const hasDriveLink = r.fileUrl && r.fileUrl.startsWith('http');
+            const driveBtnHtml = hasDriveLink ? `<button onclick="window.open('${r.fileUrl}', '_blank')" class="px-3 py-1 bg-white border border-slate-300 text-blue-600 hover:border-blue-500 hover:text-blue-600 rounded text-[11px] font-bold transition-all shadow-sm">ดูไฟล์</button>` : '';
+
+            container.innerHTML += `
+                <div class="${rowClass} table-row-hover p-4 grid grid-cols-12 gap-4 items-center border-b border-slate-100 min-h-[80px]">
+                    <div class="col-span-2 flex justify-center items-center"><span class="font-black text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-sm shadow-sm"># ${r.seq}</span></div>
+                    <div class="col-span-4 flex flex-col justify-center gap-0.5">
+                        <div class="font-bold text-slate-800 text-sm leading-snug">${r.subject}</div>
+                        <div class="text-[11px] text-slate-500 flex flex-wrap gap-x-3 gap-y-0.5"><span><b>จาก:</b> ${r.sender || '-'}</span><span><b>ถึง:</b> ${r.receiver || '-'}</span></div>
+                        ${userTrackHtml}
+                    </div>
+                    <div class="col-span-2 flex justify-center items-center">${statusBadge}</div>
+                    <div class="col-span-2 text-xs text-slate-600 flex flex-col justify-center items-center">
+                        <div class="font-bold text-slate-800 mb-0.5">${formatThaiDateShort(r.logDate)}</div>
+                        <div class="text-[10px] text-slate-400">เวลา: ${cleanTimeFormat(r.logTime) || '-'}</div>
+                    </div>
+                    <div class="col-span-2 flex flex-row flex-wrap justify-center items-center gap-2">
+                        <button onclick="editRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 rounded text-[11px] font-bold transition-all shadow-sm">แก้ไข</button>
+                        ${driveBtnHtml}
+                        <button onclick="deleteRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-red-500 hover:text-red-600 rounded text-[11px] font-bold transition-all shadow-sm">ลบ</button>
+                    </div>
+                </div>
+            `;
+        });
+        lucide.createIcons();
+    }
+
+    window.editRecord = (id) => {
+        const data = db.find(x => String(x.id) === String(id));
+        if(!data) return;
+
+        currentMode = 'edit'; 
+        clearInterval(realTimeClock); 
+        hideAllHistoryDropdowns();
+
+        document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+        document.getElementById('pageForm').classList.add('active');
+        
+        document.getElementById('formTitle').innerText = 'แก้ไขรายละเอียด';
+        document.getElementById('f_id').value = data.id;
+        document.getElementById('f_seq').value = data.seq; 
+        document.getElementById('f_sysDate').value = data.sysDate || data.logDate;
+        document.getElementById('f_sysTime').value = data.sysTime || '';
+        document.getElementById('f_logDate').value = data.logDate;
+        document.getElementById('f_logTime').value = cleanTimeFormat(data.logTime) || '';
+        document.getElementById('f_sender').value = data.sender || '';
+        document.getElementById('f_receiver').value = data.receiver || '';
+        document.getElementById('f_subject').value = data.subject || '';
+        document.getElementById('f_remark').value = data.remark || '';
+        document.getElementById('f_status').value = data.status;
+        
+        document.getElementById('f_logDate').readOnly = true;
+        document.getElementById('f_logTime').readOnly = true;
+        
+        const badge = document.getElementById('formStatusBadge');
+        if (data.status === 'รับย้อนหลัง') {
+            badge.innerText = 'รับย้อนหลัง';
+            badge.className = "px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border bg-amber-100 text-amber-700 border-amber-200";
+        } else {
+            badge.innerText = 'ปกติ';
+            badge.className = "px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200";
+        }
+
+        document.getElementById('f_fileUrl').value = data.fileUrl || 'ไม่มีไฟล์';
+        const previewImg = document.getElementById('imagePreview');
+
+        if(data.fileUrl && data.fileUrl.startsWith('http')) {
+            const isPDF = data.fileUrl.toLowerCase().endsWith('.pdf');
+            document.getElementById('f_fileStatus').innerHTML = `📌 <a href="${data.fileUrl}" target="_blank" onclick="event.stopPropagation()" class="text-blue-600 underline font-black hover:text-blue-800 relative z-10">มีไฟล์เดิมแนบอยู่</a>`;
+            if (!isPDF) { previewImg.src = data.fileUrl; previewImg.classList.remove('hidden'); }
+        } else {
+            previewImg.classList.add('hidden');
+        }
+    };
+
+    window.deleteRecord = async (id) => {
+        const result = await Swal.fire({
+            title: 'ยืนยันการลบข้อมูล?',
+            text: "ยกเลิกคิวนี้ แต่เลขลำดับจะถูกเก็บไว้ใช้ใหม่ได้",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'ใช่, ต้องการลบเลย!',
+            cancelButtonText: 'ยกเลิก'
+        });
+
+        if (result.isConfirmed) {
+            Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await fetch(WEB_APP_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'delete', sheetType: 'receiver', id: String(id) }) 
+                });
+                await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', timer: 1000, showConfirmButton: false });
+                await syncDataFromCloud(); 
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: String(error) });
+            }
+        }
+    };
+
+    function checkAndReuseDeletedSeq() {
+        let existingSeqs = db.map(item => {
+            let num = parseInt(String(item.seq).replace(/[^0-9]/g, ''), 10);
+            return isNaN(num) ? null : num;
+        }).filter(num => num !== null);
+
+        if (existingSeqs.length === 0) return Swal.fire({ icon: 'info', title: 'ไม่พบช่องว่าง' });
+
+        let maxSeq = Math.max(...existingSeqs);
+        let missingSeqs = [];
+        for (let i = 1; i < maxSeq; i++) {
+            if (!existingSeqs.includes(i)) missingSeqs.push(String(i).padStart(4, '0'));
+        }
+
+        if (missingSeqs.length === 0) return Swal.fire({ icon: 'info', title: 'ข้อมูลต่อเนื่องดีอยู่' });
+
+        let optionsHtml = missingSeqs.map(seq => `<option value="${seq}">ลำดับที่ # ${seq}</option>`).join('');
+
+        Swal.fire({
+            title: 'พบเลขทะเบียนที่ว่างอยู่!',
+            html: `<select id="swal_select_seq" class="w-full p-3 border rounded-xl font-bold text-center text-lg text-slate-800 bg-amber-50">${optionsHtml}</select>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d97706',
+            confirmButtonText: '✅ ตกลง นำเลขนี้มาใช้',
+            cancelButtonText: 'ยกเลิก',
+            preConfirm: () => document.getElementById('swal_select_seq').value
+        }).then((result) => {
+            if (result.isConfirmed && result.value) document.getElementById('f_seq').value = result.value;
+        });
+    }
+</script>
+</body>
+</html>
