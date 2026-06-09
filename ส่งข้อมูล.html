@@ -911,7 +911,7 @@ function setupPermissions(userEmail) {
     };
 
  // ==========================================
-    // 🌟 ระบบดึงเลขว่างอัจฉริยะ (รองรับทั้งเลขเต็มและทศนิยม)
+    // 🌟 ระบบดึงเลขว่างอัจฉริยะ (รองรับทั้งเลขเต็มและทศนิยม .01)
     // ==========================================
     function checkAndReuseDeletedSeq() {
         // 1. ดึงเลขทั้งหมดที่มีอยู่ในตารางตอนนี้มาเช็ก
@@ -958,7 +958,9 @@ function setupPermissions(userEmail) {
                 // ถ้าเลขย่อยตัวไหนหายไป ให้สร้างรูปแบบกลับมา (เช่น 0007.01)
                 if(!subs.includes(j)) {
                     let expectedSub = String(mainNum).padStart(4, '0') + '.' + String(j).padStart(2, '0');
-                    missingSeqs.push(expectedSub);
+                    if(!existingSeqs.includes(expectedSub)){ // กันเหนียว
+                        missingSeqs.push(expectedSub);
+                    }
                 }
             }
         }
@@ -985,11 +987,13 @@ function setupPermissions(userEmail) {
             preConfirm: () => document.getElementById('swal_select_seq').value
         }).then((result) => {
             if (result.isConfirmed && result.value) {
-                document.getElementById('f_seq').value = result.value;
-                // กระพริบช่องสีเขียวเป็นเอฟเฟกต์ให้รู้ว่าดึงเลขสำเร็จ
                 let seqInput = document.getElementById('f_seq');
-                seqInput.style.backgroundColor = '#dcfce3';
-                setTimeout(() => seqInput.style.backgroundColor = '#fff7ed', 1000);
+                if(seqInput) {
+                    seqInput.value = result.value;
+                    // เอฟเฟกต์กระพริบสีเขียวเวลาดึงเลขสำเร็จ
+                    seqInput.style.setProperty('background-color', '#dcfce3', 'important');
+                    setTimeout(() => seqInput.style.setProperty('background-color', '#fff7ed', 'important'), 1000);
+                }
             }
         });
     }
