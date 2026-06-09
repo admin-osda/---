@@ -263,39 +263,31 @@
 
 <script>
 
-    // 1. ใส่รายชื่ออีเมลแอดมิน (เปลี่ยนเป็นเมลของพี่ต้น และเมลของคุณได้เลย)
+// 1. ใส่รายชื่ออีเมลแอดมิน 
 const ADMIN_EMAILS = [
     "66040181@kmitl.ac.th", 
-    "admin-osda@kmitl.ac.th"
+    "admin-osda@kmitl.ac.th" // เปลี่ยนเป็นเมลพี่ต้นด้วยนะครับ
 ];
 
 // 2. ฟังก์ชันล็อก/ปลดล็อกช่องกรอกข้อมูล
 function setupPermissions(userEmail) {
-    // ดึง ID ของช่องกรอกข้อมูล (เช็กให้ตรงกับ ID ในไฟล์ HTML ของคุณนะครับ)
-    const docNumberInput = document.getElementById("docNumber"); // ช่องเลขที่เอกสาร
-    const docDateInput = document.getElementById("docDate");     // ช่องวันที่เอกสาร
-    const sysDateInput = document.getElementById("sysDate");     // ช่องวันที่บันทึก
+    const docNumberInput = document.getElementById("f_seq");      
+    const docDateInput = document.getElementById("f_logDate");    
+    const docTimeInput = document.getElementById("f_logTime");    
+    const sysDateInput = document.getElementById("f_sysDate");    
 
-    // ถ้าอีเมลที่ล็อกอินเข้ามา อยู่ในลิสต์ ADMIN_EMAILS
-    if (ADMIN_EMAILS.includes(userEmail)) {
-        // ปลดล็อกให้พิมพ์แก้ไขได้
-        docNumberInput.readOnly = false;
-        docDateInput.readOnly = false;
-        sysDateInput.readOnly = false;
-        
-        // ทำให้พื้นหลังเป็นสีขาวเพื่อบอกว่าพิมพ์ได้
-        docNumberInput.style.backgroundColor = "#ffffff"; 
-        console.log("เข้าสู่ระบบด้วยสิทธิ์: Admin (แก้ไขข้อมูลได้)");
-        
+    if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+        // 🔒 โหมดคนทั่วไป: ล็อกช่องไม่ให้พิมพ์เอง (แต่ปุ่มดึงเลขว่างยังกดใช้งานได้ปกติ)
+        if(docNumberInput) { docNumberInput.readOnly = true; docNumberInput.style.backgroundColor = "#e9ecef"; }
+        if(docDateInput) { docDateInput.readOnly = true; docDateInput.style.backgroundColor = "#e9ecef"; }
+        if(docTimeInput) { docTimeInput.readOnly = true; docTimeInput.style.backgroundColor = "#e9ecef"; }
+        if(sysDateInput) sysDateInput.readOnly = true;
     } else {
-        // ถ้าเป็นคนทั่วไป -> ล็อกช่องไว้ ห้ามแก้
-        docNumberInput.readOnly = true;
-        docDateInput.readOnly = true;
-        sysDateInput.readOnly = true;
-        
-        // ทำให้พื้นหลังเป็นสีเทาเพื่อบอกว่าล็อกอยู่
-        docNumberInput.style.backgroundColor = "#e9ecef"; 
-        console.log("เข้าสู่ระบบด้วยสิทธิ์: User ทั่วไป (อ่านได้อย่างเดียว)");
+        // 🔓 โหมดแอดมิน: พิมพ์แก้ได้ทุกอย่างตามใจชอบ
+        if(docNumberInput) { docNumberInput.readOnly = false; docNumberInput.style.backgroundColor = "#ffffff"; }
+        if(docDateInput) { docDateInput.readOnly = false; docDateInput.style.backgroundColor = "#ffffff"; }
+        if(docTimeInput) { docTimeInput.readOnly = false; docTimeInput.style.backgroundColor = "#ffffff"; }
+        if(sysDateInput) sysDateInput.readOnly = false;
     }
 }
     const isLocalFile = window.location.protocol === 'file:';
