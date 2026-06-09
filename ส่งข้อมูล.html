@@ -591,9 +591,29 @@ function setupPermissions(userEmail) {
         seqEl.value = "กำลังดึงเลข..."; 
 
         try {
+            // 1. ดึงค่าจากหลังบ้านมาก่อน (หลังบ้านอาจจะส่งทศนิยมมามั่วๆ)
             const response = await fetch(`${WEB_APP_URL}?action=getSeq&sheetType=sender&mode=${currentMode}&date=${targetDate}`);
             const data = await response.json();
-            seqEl.value = (data.status === 'success' && data.seq) ? data.seq : "0001"; 
+            let rawSeq = (data.status === 'success' && data.seq) ? data.seq : "0001"; 
+
+            // 🌟 2. ด่านตรวจ: ดักจับและแก้บั๊กทศนิยมมั่วสำหรับ "ส่งย้อนหลัง"
+            if (currentMode === 'backfill' && rawSeq.includes('.')) {
+                let baseMain = rawSeq.split('.')[0]; // หั่นเอาแค่เลขหลัก เช่น "0026"
+                
+                // ค้นหาทศนิยมทั้งหมดในตาราง (db) เฉพาะที่เป็นของ "0026"
+                let existingDecimals = db
+                    .map(item => String(item.seq).trim())
+                    .filter(s => s.startsWith(baseMain + '.'))
+                    .map(s => parseInt(s.split('.')[1], 10))
+                    .filter(n => !isNaN(n));
+                
+                // หาค่าทศนิยมที่รันไปแล้วของกลุ่มนี้ (ถ้าไม่มีให้เป็น 0) แล้วบวก 1 เข้าไป!
+                let correctMaxSub = existingDecimals.length > 0 ? Math.max(...existingDecimals) : 0;
+                seqEl.value = baseMain + '.' + String(correctMaxSub + 1).padStart(2, '0');
+            } else {
+                // ถ้าเป็นส่งปกติ ก็ใช้เลขที่หลังบ้านส่งมาได้เลย
+                seqEl.value = rawSeq; 
+            }
         } catch (err) {
             console.error("Calculate Seq Error:", err);
             seqEl.value = "0001"; 
