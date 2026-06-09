@@ -842,9 +842,6 @@ function setupPermissions(userEmail) {
         document.getElementById('f_remark').value = data.remark || '';
         document.getElementById('f_status').value = data.status;
         
-        document.getElementById('f_logDate').readOnly = true;
-        document.getElementById('f_logTime').readOnly = true;
-        
         const badge = document.getElementById('formStatusBadge');
         if (data.status === 'ส่งย้อนหลัง') {
             badge.innerText = 'ย้อนหลัง';
@@ -862,17 +859,11 @@ function setupPermissions(userEmail) {
             document.getElementById('f_fileStatus').innerHTML = `📌 <a href="${data.fileUrl}" target="_blank" onclick="event.stopPropagation()" class="text-blue-600 underline font-black hover:text-blue-800 relative z-10">มีไฟล์เดิมแนบอยู่</a>`;
             if (!isPDF) { previewImg.src = data.fileUrl; previewImg.classList.remove('hidden'); }
         } else {
-           if(data.fileUrl && data.fileUrl.startsWith('http')) {
-            const isPDF = data.fileUrl.toLowerCase().endsWith('.pdf');
-            document.getElementById('f_fileStatus').innerHTML = `📌 <a href="${data.fileUrl}" target="_blank" onclick="event.stopPropagation()" class="text-blue-600 underline font-black hover:text-blue-800 relative z-10">มีไฟล์เดิมแนบอยู่</a>`;
-            if (!isPDF) { previewImg.src = data.fileUrl; previewImg.classList.remove('hidden'); }
-        } else {
             previewImg.classList.add('hidden');
         }
 
         // 🌟 เรียกใช้ระบบเช็กสิทธิ์ตอนกดแก้ไข
         setupPermissions(sessionStorage.getItem('osda_user_email'));
-    };
     };
 
     window.deleteRecord = async (id) => {
