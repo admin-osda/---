@@ -910,22 +910,68 @@ function setupPermissions(userEmail) {
         }
     };
 
+ // ==========================================
+    // 🌟 ระบบดึงเลขว่างอัจฉริยะ (รองรับทั้งเลขเต็มและทศนิยม)
+    // ==========================================
     function checkAndReuseDeletedSeq() {
-        let existingSeqs = db.map(item => {
-            let num = parseInt(String(item.seq).replace(/[^0-9]/g, ''), 10);
-            return isNaN(num) ? null : num;
-        }).filter(num => num !== null);
-
+        // 1. ดึงเลขทั้งหมดที่มีอยู่ในตารางตอนนี้มาเช็ก
+        let existingSeqs = db.map(item => String(item.seq).trim()).filter(s => s !== "");
         if (existingSeqs.length === 0) return Swal.fire({ icon: 'info', title: 'ไม่พบช่องว่าง' });
 
-        let maxSeq = Math.max(...existingSeqs);
+        // 2. แยกชิ้นส่วนตัวเลข (เลขหลัก กับ เลขทศนิยม)
+        let parsed = existingSeqs.map(s => {
+            let parts = s.split('.');
+            return { 
+                main: parseInt(parts[0], 10), 
+                sub: parts.length > 1 ? parseInt(parts[1], 10) : 0 
+            };
+        }).filter(p => !isNaN(p.main));
+
+        if (parsed.length === 0) return Swal.fire({ icon: 'info', title: 'ไม่พบช่องว่าง' });
+
+        let maxMain = Math.max(...parsed.map(p => p.main));
         let missingSeqs = [];
-        for (let i = 1; i < maxSeq; i++) {
-            if (!existingSeqs.includes(i)) missingSeqs.push(String(i).padStart(4, '0'));
+
+        // 3. ควานหา "เลขหลัก" ที่หายไป (ไล่ตั้งแต่ 1 จนถึงเลขสูงสุด)
+        for(let i = 1; i <= maxMain; i++) {
+            let expectedMain = String(i).padStart(4, '0');
+            // ถ้าเลขหลักนี้ (แบบไม่มีจุด) ไม่มีอยู่ในระบบ ถือว่ามันว่าง!
+            if(!existingSeqs.includes(expectedMain)) {
+                missingSeqs.push(expectedMain);
+            }
         }
 
-        if (missingSeqs.length === 0) return Swal.fire({ icon: 'info', title: 'ข้อมูลต่อเนื่องดีอยู่' });
+        // 4. ควานหา "เลขทศนิยม" ที่หายไป
+        let groups = {};
+        parsed.forEach(p => {
+            if(p.sub > 0) {
+                if(!groups[p.main]) groups[p.main] = [];
+                groups[p.main].push(p.sub);
+            }
+        });
 
+        // เช็กทศนิยมทีละหมวดเลขหลัก
+        for (let mainNum in groups) {
+            let subs = groups[mainNum];
+            let maxSub = Math.max(...subs);
+            for(let j = 1; j <= maxSub; j++) {
+                // ถ้าเลขย่อยตัวไหนหายไป ให้สร้างรูปแบบกลับมา (เช่น 0007.01)
+                if(!subs.includes(j)) {
+                    let expectedSub = String(mainNum).padStart(4, '0') + '.' + String(j).padStart(2, '0');
+                    missingSeqs.push(expectedSub);
+                }
+            }
+        }
+
+        // 5. เรียงลำดับเลขที่หายไปจากน้อยไปมาก ให้ดูง่ายๆ
+        missingSeqs.sort((a, b) => parseFloat(a) - parseFloat(b));
+
+        // 6. ถ้าไม่มีอะไรหายไปเลย
+        if (missingSeqs.length === 0) {
+            return Swal.fire({ icon: 'info', title: 'ข้อมูลต่อเนื่องดีอยู่', text: 'ไม่มีเลขใดถูกลบไปจากระบบ' });
+        }
+
+        // 7. สร้างหน้าต่าง Dropdown ให้แอดมินเลือกเลขที่จะนำกลับมาใช้
         let optionsHtml = missingSeqs.map(seq => `<option value="${seq}">ลำดับที่ # ${seq}</option>`).join('');
 
         Swal.fire({
@@ -938,7 +984,13 @@ function setupPermissions(userEmail) {
             cancelButtonText: 'ยกเลิก',
             preConfirm: () => document.getElementById('swal_select_seq').value
         }).then((result) => {
-            if (result.isConfirmed && result.value) document.getElementById('f_seq').value = result.value;
+            if (result.isConfirmed && result.value) {
+                document.getElementById('f_seq').value = result.value;
+                // กระพริบช่องสีเขียวเป็นเอฟเฟกต์ให้รู้ว่าดึงเลขสำเร็จ
+                let seqInput = document.getElementById('f_seq');
+                seqInput.style.backgroundColor = '#dcfce3';
+                setTimeout(() => seqInput.style.backgroundColor = '#fff7ed', 1000);
+            }
         });
     }
 </script>
