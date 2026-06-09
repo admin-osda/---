@@ -284,25 +284,27 @@ function setupPermissions(userEmail) {
     if(docTimeInput) { docTimeInput.readOnly = false; docTimeInput.style.backgroundColor = "#ffffff"; }
 
     if (!isAdmin) {
-        // 🔒 โหมดคนทั่วไป (เช่น 190): ล็อกช่องเลขที่ บังคับสีเทาทึบ และเปลี่ยนเมาส์เป็นรูปห้ามกด
+        // 🔒 โหมดคนทั่วไป: ปิดตายช่องเลขที่ และ วันที่ระบบ (ห้ามพิมพ์ ห้ามโฟกัส)
         if(docNumberInput) { 
             docNumberInput.readOnly = true; 
+            docNumberInput.disabled = true; // ท่าไม้ตาย ล็อกการคลิก
             docNumberInput.style.setProperty('background-color', '#e9ecef', 'important');
             docNumberInput.style.setProperty('border-color', '#cbd5e1', 'important');
             docNumberInput.style.setProperty('color', '#94a3b8', 'important');
             docNumberInput.style.setProperty('cursor', 'not-allowed', 'important');
         }
-        if(sysDateInput) sysDateInput.readOnly = true;
+        if(sysDateInput) { sysDateInput.readOnly = true; sysDateInput.disabled = true; }
     } else {
-        // 🔓 โหมดแอดมิน (เช่น 181): ปลดล็อก และให้สีกลับมาเป็นสีส้มสว่างตามปกติ
+        // 🔓 โหมดแอดมิน: ปลดล็อก พิมพ์และคลิกได้ปกติ
         if(docNumberInput) { 
             docNumberInput.readOnly = false; 
+            docNumberInput.disabled = false;
             docNumberInput.style.setProperty('background-color', '#fff7ed', 'important');
             docNumberInput.style.setProperty('border-color', '#ea580c', 'important');
             docNumberInput.style.setProperty('color', '#ea580c', 'important');
             docNumberInput.style.setProperty('cursor', 'text', 'important');
         }
-        if(sysDateInput) sysDateInput.readOnly = false;
+        if(sysDateInput) { sysDateInput.readOnly = false; sysDateInput.disabled = false; }
     }
 }
     const isLocalFile = window.location.protocol === 'file:';
