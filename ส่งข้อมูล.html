@@ -519,6 +519,7 @@ function setupPermissions(userEmail) {
             
             calculateSequence();
         }
+        setupPermissions(sessionStorage.getItem('osda_user_email'));
     };
 
     window.goHome = () => {
@@ -737,7 +738,7 @@ function setupPermissions(userEmail) {
     return dateStr;
 }
 
-    function renderList() {
+   function renderList() {
         const container = document.getElementById('recordList');
         if (!container) return;
         container.innerHTML = '';
@@ -758,6 +759,10 @@ function setupPermissions(userEmail) {
         
         const start = (currentPage - 1) * itemsPerPage;
         const pageItems = filteredRecords.slice(start, start + itemsPerPage);
+        
+        // 🌟 ดึงข้อมูลเมลเพื่อเช็กสิทธิ์ก่อนสร้างตาราง
+        const currentUserEmail = sessionStorage.getItem('osda_user_email');
+        const isAdmin = ADMIN_EMAILS.includes(currentUserEmail);
         
         pageItems.forEach((r) => {
             const isBackfill = r.status === 'ส่งย้อนหลัง' || (r.seq && r.seq.includes('.'));
@@ -781,6 +786,16 @@ function setupPermissions(userEmail) {
             const hasDriveLink = r.fileUrl && r.fileUrl.startsWith('http');
             const driveBtnHtml = hasDriveLink ? `<button onclick="window.open('${r.fileUrl}', '_blank')" class="px-3 py-1 bg-white border border-slate-300 text-blue-600 hover:border-blue-500 hover:text-blue-600 rounded text-[11px] font-bold transition-all shadow-sm">ดูไฟล์</button>` : '';
 
+            // 🌟 เงื่อนไขซ่อน/โชว์ปุ่ม แอดมินเห็นครบ คนทั่วไปเห็นแค่ดูไฟล์
+            let actionButtonsHtml = driveBtnHtml; 
+            if (isAdmin) {
+                actionButtonsHtml = `
+                    <button onclick="editRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 rounded text-[11px] font-bold transition-all shadow-sm">แก้ไข</button>
+                    ${driveBtnHtml}
+                    <button onclick="deleteRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-red-500 hover:text-red-600 rounded text-[11px] font-bold transition-all shadow-sm">ลบ</button>
+                `;
+            }
+
             container.innerHTML += `
                 <div class="${rowClass} table-row-hover p-4 grid grid-cols-12 gap-4 items-center border-b border-slate-100 min-h-[80px]">
                     <div class="col-span-2 flex justify-center items-center"><span class="font-black text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-sm shadow-sm"># ${r.seq}</span></div>
@@ -795,9 +810,7 @@ function setupPermissions(userEmail) {
                         <div class="text-[10px] text-slate-400">เวลา: ${cleanTimeFormat(r.logTime) || '-'}</div>
                     </div>
                     <div class="col-span-2 flex flex-row flex-wrap justify-center items-center gap-2">
-                        <button onclick="editRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 rounded text-[11px] font-bold transition-all shadow-sm">แก้ไข</button>
-                        ${driveBtnHtml}
-                        <button onclick="deleteRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-red-500 hover:text-red-600 rounded text-[11px] font-bold transition-all shadow-sm">ลบ</button>
+                        ${actionButtonsHtml}
                     </div>
                 </div>
             `;
@@ -849,8 +862,17 @@ function setupPermissions(userEmail) {
             document.getElementById('f_fileStatus').innerHTML = `📌 <a href="${data.fileUrl}" target="_blank" onclick="event.stopPropagation()" class="text-blue-600 underline font-black hover:text-blue-800 relative z-10">มีไฟล์เดิมแนบอยู่</a>`;
             if (!isPDF) { previewImg.src = data.fileUrl; previewImg.classList.remove('hidden'); }
         } else {
+           if(data.fileUrl && data.fileUrl.startsWith('http')) {
+            const isPDF = data.fileUrl.toLowerCase().endsWith('.pdf');
+            document.getElementById('f_fileStatus').innerHTML = `📌 <a href="${data.fileUrl}" target="_blank" onclick="event.stopPropagation()" class="text-blue-600 underline font-black hover:text-blue-800 relative z-10">มีไฟล์เดิมแนบอยู่</a>`;
+            if (!isPDF) { previewImg.src = data.fileUrl; previewImg.classList.remove('hidden'); }
+        } else {
             previewImg.classList.add('hidden');
         }
+
+        // 🌟 เรียกใช้ระบบเช็กสิทธิ์ตอนกดแก้ไข
+        setupPermissions(sessionStorage.getItem('osda_user_email'));
+    };
     };
 
     window.deleteRecord = async (id) => {
