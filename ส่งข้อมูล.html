@@ -262,13 +262,49 @@
 </div>
 
 <script>
+
+    // 1. ใส่รายชื่ออีเมลแอดมิน (เปลี่ยนเป็นเมลของพี่ต้น และเมลของคุณได้เลย)
+const ADMIN_EMAILS = [
+    "66040181@kmitl.ac.th", 
+    "admin-osda@kmitl.ac.th"
+];
+
+// 2. ฟังก์ชันล็อก/ปลดล็อกช่องกรอกข้อมูล
+function setupPermissions(userEmail) {
+    // ดึง ID ของช่องกรอกข้อมูล (เช็กให้ตรงกับ ID ในไฟล์ HTML ของคุณนะครับ)
+    const docNumberInput = document.getElementById("docNumber"); // ช่องเลขที่เอกสาร
+    const docDateInput = document.getElementById("docDate");     // ช่องวันที่เอกสาร
+    const sysDateInput = document.getElementById("sysDate");     // ช่องวันที่บันทึก
+
+    // ถ้าอีเมลที่ล็อกอินเข้ามา อยู่ในลิสต์ ADMIN_EMAILS
+    if (ADMIN_EMAILS.includes(userEmail)) {
+        // ปลดล็อกให้พิมพ์แก้ไขได้
+        docNumberInput.readOnly = false;
+        docDateInput.readOnly = false;
+        sysDateInput.readOnly = false;
+        
+        // ทำให้พื้นหลังเป็นสีขาวเพื่อบอกว่าพิมพ์ได้
+        docNumberInput.style.backgroundColor = "#ffffff"; 
+        console.log("เข้าสู่ระบบด้วยสิทธิ์: Admin (แก้ไขข้อมูลได้)");
+        
+    } else {
+        // ถ้าเป็นคนทั่วไป -> ล็อกช่องไว้ ห้ามแก้
+        docNumberInput.readOnly = true;
+        docDateInput.readOnly = true;
+        sysDateInput.readOnly = true;
+        
+        // ทำให้พื้นหลังเป็นสีเทาเพื่อบอกว่าล็อกอยู่
+        docNumberInput.style.backgroundColor = "#e9ecef"; 
+        console.log("เข้าสู่ระบบด้วยสิทธิ์: User ทั่วไป (อ่านได้อย่างเดียว)");
+    }
+}
     const isLocalFile = window.location.protocol === 'file:';
     if (!isLocalFile && sessionStorage.getItem('osda_auth') !== 'true') {
         window.location.href = 'index.html';
     }
 
-    let WEB_APP_URL = localStorage.getItem('OSDA_SENDER_WEB_APP_URL') || "https://script.google.com/macros/s/AKfycbzjos5qRCmo5wX_w_TccLwEp4ULEnEhHH-6Y5t4yPYU3RmwwtXjviYwuKOC4N1jTnG2jg/exec";
-    let IMGBB_API_KEY = localStorage.getItem('OSDA_SENDER_IMGBB_KEY') || "f288c83c24a3f4ecd8d8999d3ce87fa2";
+    let WEB_APP_URL = localStorage.getItem('OSDA_SENDER_WEB_APP_URL') || "https://script.google.com/macros/s/AKfycbzkoQt1mBLXuz-Jzetg_o3FmKCAYIibbM2lScrXFOZ5fdpHUb9cas67PyMWns03weW0/exec";
+    let IMGBB_API_KEY = localStorage.getItem('OSDA_SENDER_IMGBB_KEY') || "943c4187147fb6507b61c2c6de104cfa";
 
     localforage.config({ name: 'OSDA_STORAGE_SENDER' });
     
