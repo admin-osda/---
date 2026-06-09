@@ -271,8 +271,8 @@
     // ==========================================
     // ⚙️ อัปเกรดคีย์แยกจาก Sender เพื่อความเป็นส่วนตัว
     // ==========================================
-    let WEB_APP_URL = localStorage.getItem('OSDA_RECEIVER_WEB_APP_URL') || "https://script.google.com/macros/s/AKfycbwHAvZ2O6nGOPbudwaluTJgSHNBXDrTqoMYz1sPt-_M9MA5rUx3Vl0MdjLG1tyoNL3C/exec";
-    let IMGBB_API_KEY = localStorage.getItem('OSDA_RECEIVER_IMGBB_KEY') || "f288c83c24a3f4ecd8d8999d3ce87fa2";
+    let WEB_APP_URL = localStorage.getItem('OSDA_RECEIVER_WEB_APP_URL') || "https://script.google.com/macros/s/AKfycbwyc75cZLM2_BY8qFSKEbHku1s8FUqzOZUc6NMcGig6ULAgCF4xXJnjAzPfpa3X0DqtRw/exec";
+    let IMGBB_API_KEY = localStorage.getItem('OSDA_RECEIVER_IMGBB_KEY') || "943c4187147fb6507b61c2c6de104cfa";
     // ==========================================
 
     localforage.config({ name: 'OSDA_RECEIVER_STORAGE' });
@@ -302,11 +302,55 @@
         "wanwisa.wo@kmitl.ac.th": "พี่วรรณวิษา วงศ์ทอง"
     };
 
+// ==========================================
+    // 👤 ระบบแปลงชื่อผู้ใช้
+    // ==========================================
     function getUserDisplayName(email) {
         if (!email) return "ไม่ระบุตัวตน";
         const cleanEmail = email.toLowerCase().trim();
         if (USER_MAPPING[cleanEmail]) return USER_MAPPING[cleanEmail];
         return cleanEmail.split('@')[0];
+    }
+
+    // ==========================================
+    // 🔒 ระบบสิทธิ์การใช้งาน (Role-Based Access)
+    // ==========================================
+    const ADMIN_EMAILS = [
+        "66040181@kmitl.ac.th", 
+        "admin-osda@kmitl.ac.th" 
+    ];
+
+    function setupPermissions(userEmail) {
+        const cleanEmail = userEmail ? userEmail.trim().toLowerCase() : "";
+        const isAdmin = ADMIN_EMAILS.includes(cleanEmail);
+
+        const docNumberInput = document.getElementById("f_seq");      
+        const sysDateInput = document.getElementById("f_sysDate");    
+        const btnReuse = document.getElementById("btnReuseSeq");
+
+        if (!isAdmin) {
+            // โหมดคนทั่วไป: ล็อกตาย ห้ามคลิก
+            if(docNumberInput) { 
+                docNumberInput.readOnly = true; docNumberInput.disabled = true;
+                docNumberInput.style.setProperty('background-color', '#e9ecef', 'important');
+                docNumberInput.style.setProperty('border-color', '#cbd5e1', 'important');
+                docNumberInput.style.setProperty('color', '#94a3b8', 'important');
+                docNumberInput.style.setProperty('pointer-events', 'none', 'important');
+            }
+            if(sysDateInput) { sysDateInput.readOnly = true; sysDateInput.disabled = true; }
+            if(btnReuse) btnReuse.style.display = 'none';
+        } else {
+            // โหมดแอดมิน: แก้ไขได้ พิมพ์ได้
+            if(docNumberInput) { 
+                docNumberInput.readOnly = false; docNumberInput.disabled = false;
+                docNumberInput.style.setProperty('background-color', '#fff7ed', 'important');
+                docNumberInput.style.setProperty('border-color', '#ea580c', 'important');
+                docNumberInput.style.setProperty('color', '#ea580c', 'important');
+                docNumberInput.style.setProperty('pointer-events', 'auto', 'important');
+            }
+            if(sysDateInput) { sysDateInput.readOnly = false; sysDateInput.disabled = false; }
+            if(btnReuse) btnReuse.style.display = 'flex';
+        }
     }
 
     const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
@@ -382,7 +426,8 @@
     window.onload = async function() {
         lucide.createIcons();
         updateUserBadge();
-        await syncDataFromCloud(); 
+        setupPermissions(sessionStorage.getItem('osda_user_email'));
+        await syncDataFromCloud();
         
         setInterval(async () => {
             if (currentMode === 'hub') await syncDataFromCloud(true);
@@ -511,7 +556,7 @@
         } else if (mode === 'backfill') {
             document.getElementById('formTitle').innerText = 'บันทึกรับหนังสือย้อนหลัง';
             statusInput.value = 'รับย้อนหลัง';
-            badge.innerText = 'อ้อนหลัง';
+            badge.innerText = 'ย้อนหลัง';
             badge.className = "px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider border bg-amber-100 text-amber-700 border-amber-200";
             
             const now = new Date();
@@ -525,6 +570,7 @@
             
             calculateSequence();
         }
+        setupPermissions(sessionStorage.getItem('osda_user_email'));
     };
 
     window.goHome = () => {
@@ -570,7 +616,7 @@
         }
     }
 
-    async function calculateSequence() {
+   async function calculateSequence() {
         if (document.getElementById('f_id').value) return; 
         const targetDate = document.getElementById('f_logDate').value;
         if (!targetDate) return;
@@ -579,9 +625,26 @@
         seqEl.value = "กำลังดึงเลข..."; 
 
         try {
+            // ดึงค่าจากหลังบ้าน (ฝั่งรับหนังสือ)
             const response = await fetch(`${WEB_APP_URL}?action=getSeq&sheetType=receiver&mode=${currentMode}&date=${targetDate}`);
             const data = await response.json();
-            seqEl.value = (data.status === 'success' && data.seq) ? data.seq : "0001"; 
+            let rawSeq = (data.status === 'success' && data.seq) ? data.seq : "0001"; 
+
+            // 🌟 ด่านตรวจ: ดักจับและแก้บั๊กทศนิยมมั่วสำหรับ "รับย้อนหลัง"
+            if (currentMode === 'backfill' && rawSeq.includes('.')) {
+                let baseMain = rawSeq.split('.')[0]; 
+                
+                let existingDecimals = db
+                    .map(item => String(item.seq).trim())
+                    .filter(s => s.startsWith(baseMain + '.'))
+                    .map(s => parseInt(s.split('.')[1], 10))
+                    .filter(n => !isNaN(n));
+                
+                let correctMaxSub = existingDecimals.length > 0 ? Math.max(...existingDecimals) : 0;
+                seqEl.value = baseMain + '.' + String(correctMaxSub + 1).padStart(2, '0');
+            } else {
+                seqEl.value = rawSeq; 
+            }
         } catch (err) {
             console.error("Calculate Seq Error:", err);
             seqEl.value = "0001"; 
@@ -850,9 +913,11 @@
         } else {
             previewImg.classList.add('hidden');
         }
+        setupPermissions(sessionStorage.getItem('osda_user_email'));
     };
 
     window.deleteRecord = async (id) => {
+        
         const result = await Swal.fire({
             title: 'ยืนยันการลบข้อมูล?',
             text: "ยกเลิกคิวนี้ แต่เลขลำดับจะถูกเก็บไว้ใช้ใหม่ได้",
@@ -879,21 +944,59 @@
         }
     };
 
+   // ==========================================
+    // 🌟 ระบบดึงเลขว่างอัจฉริยะ (รองรับทั้งเลขเต็มและทศนิยม .01)
+    // ==========================================
     function checkAndReuseDeletedSeq() {
-        let existingSeqs = db.map(item => {
-            let num = parseInt(String(item.seq).replace(/[^0-9]/g, ''), 10);
-            return isNaN(num) ? null : num;
-        }).filter(num => num !== null);
-
+        let existingSeqs = db.map(item => String(item.seq).trim()).filter(s => s !== "");
         if (existingSeqs.length === 0) return Swal.fire({ icon: 'info', title: 'ไม่พบช่องว่าง' });
 
-        let maxSeq = Math.max(...existingSeqs);
+        let parsed = existingSeqs.map(s => {
+            let parts = s.split('.');
+            return { 
+                main: parseInt(parts[0], 10), 
+                sub: parts.length > 1 ? parseInt(parts[1], 10) : 0 
+            };
+        }).filter(p => !isNaN(p.main));
+
+        if (parsed.length === 0) return Swal.fire({ icon: 'info', title: 'ไม่พบช่องว่าง' });
+
+        let maxMain = Math.max(...parsed.map(p => p.main));
         let missingSeqs = [];
-        for (let i = 1; i < maxSeq; i++) {
-            if (!existingSeqs.includes(i)) missingSeqs.push(String(i).padStart(4, '0'));
+
+        for(let i = 1; i <= maxMain; i++) {
+            let expectedMain = String(i).padStart(4, '0');
+            if(!existingSeqs.includes(expectedMain)) {
+                missingSeqs.push(expectedMain);
+            }
         }
 
-        if (missingSeqs.length === 0) return Swal.fire({ icon: 'info', title: 'ข้อมูลต่อเนื่องดีอยู่' });
+        let groups = {};
+        parsed.forEach(p => {
+            if(p.sub > 0) {
+                if(!groups[p.main]) groups[p.main] = [];
+                groups[p.main].push(p.sub);
+            }
+        });
+
+        for (let mainNum in groups) {
+            let subs = groups[mainNum];
+            let maxSub = Math.max(...subs);
+            for(let j = 1; j <= maxSub; j++) {
+                if(!subs.includes(j)) {
+                    let expectedSub = String(mainNum).padStart(4, '0') + '.' + String(j).padStart(2, '0');
+                    if(!existingSeqs.includes(expectedSub)){ 
+                        missingSeqs.push(expectedSub);
+                    }
+                }
+            }
+        }
+
+        missingSeqs.sort((a, b) => parseFloat(a) - parseFloat(b));
+
+        if (missingSeqs.length === 0) {
+            return Swal.fire({ icon: 'info', title: 'ข้อมูลต่อเนื่องดีอยู่', text: 'ไม่มีเลขใดถูกลบไปจากระบบ' });
+        }
 
         let optionsHtml = missingSeqs.map(seq => `<option value="${seq}">ลำดับที่ # ${seq}</option>`).join('');
 
@@ -907,7 +1010,14 @@
             cancelButtonText: 'ยกเลิก',
             preConfirm: () => document.getElementById('swal_select_seq').value
         }).then((result) => {
-            if (result.isConfirmed && result.value) document.getElementById('f_seq').value = result.value;
+            if (result.isConfirmed && result.value) {
+                let seqInput = document.getElementById('f_seq');
+                if(seqInput) {
+                    seqInput.value = result.value;
+                    seqInput.style.setProperty('background-color', '#dcfce3', 'important');
+                    setTimeout(() => seqInput.style.setProperty('background-color', '#fff7ed', 'important'), 1000);
+                }
+            }
         });
     }
 </script>
