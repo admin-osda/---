@@ -207,6 +207,13 @@
             </div>
             
             <div>
+                <div class="flex justify-between items-center mb-1 px-1 mt-2">
+                    <label class="form-label !mb-0">หน่วยรับ</label>
+                </div>
+                <input type="text" id="f_recUnit" class="input-box" placeholder="ระบุหน่วยงานภายใน หรือชื่อผู้รับเรื่อง..." autocomplete="off">
+            </div>
+
+            <div>
                 <div class="flex justify-between items-center mb-1 px-1">
                     <label class="form-label !mb-0">เรื่อง</label>
                 </div>
@@ -312,7 +319,7 @@ function setupPermissions(userEmail) {
         window.location.href = 'index.html';
     }
 
-    let WEB_APP_URL = localStorage.getItem('OSDA_SENDER_WEB_APP_URL') || "https://script.google.com/macros/s/AKfycbwgeBYMc9Pkx38st1Epie2D8PdUousV__O7E0dSnN5y8N5yNW3RAicLQ3xChOHYCBZNJA/exec";
+    let WEB_APP_URL = localStorage.getItem('OSDA_SENDER_WEB_APP_URL') || "https://script.google.com/macros/s/AKfycbyosCfz7kBkreEZsgMb8EEAlvuImplwhAuu2aBdlO50eTU8AzYfx0_YUIjPh5eRiXufMQ/exec";
     let IMGBB_API_KEY = localStorage.getItem('OSDA_SENDER_IMGBB_KEY') || "943c4187147fb6507b61c2c6de104cfa";
 
     localforage.config({ name: 'OSDA_STORAGE_SENDER' });
@@ -478,6 +485,7 @@ function setupPermissions(userEmail) {
         
         document.getElementById('docForm').reset();
         document.getElementById('f_id').value = '';
+        document.getElementById('f_recUnit').value = ''; // ล้างช่องหน่วยรับ
         document.getElementById('f_fileUrl').value = 'ไม่มีไฟล์';
         document.getElementById('f_fileStatus').innerText = '';
         document.getElementById('imagePreview').classList.add('hidden');
@@ -724,6 +732,7 @@ function setupPermissions(userEmail) {
                 logTime: getValue('f_logTime'),
                 sender: getValue('f_sender'),
                 receiver: getValue('f_receiver'),
+                recUnit: getValue('f_recUnit'),
                 subject: getValue('f_subject'),
                 remark: getValue('f_remark'),
                 status: getValue('f_status'),
@@ -875,6 +884,7 @@ function setupPermissions(userEmail) {
         document.getElementById('f_logTime').value = cleanTimeFormat(data.logTime) || '';
         document.getElementById('f_sender').value = data.sender || '';
         document.getElementById('f_receiver').value = data.receiver || '';
+        document.getElementById('f_recUnit').value = data.recUnit || ''; // ดึงค่าหน่วยรับมาโชว์ตอนแก้ไข
         document.getElementById('f_subject').value = data.subject || '';
         document.getElementById('f_remark').value = data.remark || '';
         document.getElementById('f_status').value = data.status;
