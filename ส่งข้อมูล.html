@@ -575,14 +575,14 @@ function setupPermissions(userEmail) {
             
            // ค้นหาช่วงนี้ในฟังก์ชัน syncDataFromCloud
 if (data.status === 'success' && data.data) {
-    // แก้ไขตรงนี้ครับ เติม .reverse() ต่อท้าย data.data ก่อน .map()
-    db = data.data.reverse().map(r => ({
-        ...r,
-        creator: String(r.creator || ''),
-        editor: String(r.editor || ''),
-        fileUrl: String(r.hasFile || 'ไม่มีไฟล์')
-    })); 
-} else {
+                // 🌟 พลิกข้อมูลตั้งแต่ดึงมาเลย
+                db = data.data.reverse().map(r => ({
+                    ...r,
+                    creator: String(r.creator || ''),
+                    editor: String(r.editor || ''),
+                    fileUrl: String(r.hasFile || 'ไม่มีไฟล์')
+                })); 
+            } else {
     db = [];
 }
         } catch (err) {
@@ -760,14 +760,15 @@ if (data.status === 'success' && data.data) {
         }
     };
 
-    function handleSearch() {
-        const q = document.getElementById('searchInput').value.trim().toLowerCase();
+   function searchData() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        currentPage = 1;
         filteredRecords = db.filter(r => 
             (r.subject || '').toLowerCase().includes(q) || 
             (r.seq || '').toLowerCase().includes(q) ||
             (r.sender || '').toLowerCase().includes(q) ||
             (r.receiver || '').toLowerCase().includes(q)
-        ).sort((a,b) => b.id - a.id);
+        ); 
         renderList();
     }
 
