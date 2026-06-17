@@ -273,8 +273,7 @@
 // 1. ใส่รายชื่ออีเมลแอดมิน (มีแค่คุณ กับ พี่ต้น)
 const ADMIN_EMAILS = [
     "66040181@kmitl.ac.th", 
-    "admin-osda@kmitl.ac.th",
-    "sharnjira.ki@kmitl.ac.th"
+    "admin-osda@kmitl.ac.th" 
 ];
 
 // 2. ฟังก์ชันล็อก/ปลดล็อกช่องกรอกข้อมูล
@@ -574,16 +573,18 @@ function setupPermissions(userEmail) {
             const response = await fetch(`${WEB_APP_URL}?action=getAll&sheetType=sender`);
             const data = await response.json();
             
-            if (data.status === 'success' && data.data) {
-                db = data.data.map(r => ({
-                    ...r,
-                    creator: String(r.creator || ''),
-                    editor: String(r.editor || ''),
-                    fileUrl: String(r.hasFile || 'ไม่มีไฟล์')
-                })).reverse(); 
-            } else {
-                db = [];
-            }
+           // ค้นหาช่วงนี้ในฟังก์ชัน syncDataFromCloud
+if (data.status === 'success' && data.data) {
+    // แก้ไขตรงนี้ครับ เติม .reverse() ต่อท้าย data.data ก่อน .map()
+    db = data.data.reverse().map(r => ({
+        ...r,
+        creator: String(r.creator || ''),
+        editor: String(r.editor || ''),
+        fileUrl: String(r.hasFile || 'ไม่มีไฟล์')
+    })); 
+} else {
+    db = [];
+}
         } catch (err) {
             console.error("Sync Error:", err);
         } finally {
