@@ -794,8 +794,9 @@ function setupPermissions(userEmail) {
         document.getElementById('btnPrev').disabled = (currentPage === 1);
         document.getElementById('btnNext').disabled = (currentPage === totalPages);
         
+        const sortedRecords = [...filteredRecords].reverse();
         const start = (currentPage - 1) * itemsPerPage;
-        const pageItems = filteredRecords.slice(start, start + itemsPerPage);
+        const pageItems = sortedRecords.slice(start, start + itemsPerPage);
         
         // 🌟 ดึงข้อมูลเมลเพื่อเช็กสิทธิ์ก่อนสร้างตาราง
         const currentUserEmail = sessionStorage.getItem('osda_user_email');
