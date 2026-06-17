@@ -566,7 +566,7 @@ function setupPermissions(userEmail) {
             const data = await response.json();
             
             if (data.status === 'success' && data.data) {
-                db = data.data.map(r => ({
+                db = data.data.reverse().map(r => ({
                     ...r,
                     creator: String(r.creator || ''),
                     editor: String(r.editor || ''),
