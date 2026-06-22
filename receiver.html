@@ -582,6 +582,18 @@
             calculateSequence();
         }
         setupPermissions(sessionStorage.getItem('osda_user_email'));
+        // 🔓 ปลดล็อกช่องเลขที่หนังสือและวันที่ ให้พิมพ์ได้ปกติตอนเพิ่มคิวใหม่
+    const docNoInput = document.getElementById('f_docNo');
+    const docDateInput = document.getElementById('f_docDate');
+    
+    if (docNoInput) {
+        docNoInput.readOnly = false;
+        docNoInput.classList.remove('bg-slate-100', 'pointer-events-none');
+    }
+    if (docDateInput) {
+        docDateInput.readOnly = false;
+        docDateInput.classList.remove('bg-slate-100', 'pointer-events-none');
+    }
     };
 
     window.goHome = () => {
@@ -752,6 +764,8 @@
                 sheetType: 'receiver', 
                 id: id,
                 seq: getValue('f_seq'),
+                docNo: getValue('f_docNo'),       
+                docDate: getValue('f_docDate'),   
                 sysDate: getValue('f_sysDate'),
                 sysTime: getValue('f_sysTime'),
                 logDate: getValue('f_logDate'),
@@ -763,6 +777,7 @@
                 status: getValue('f_status'),
                 user: userDisplayName, 
                 fileUrl: getValue('f_fileUrl') 
+             
             };
 
             const response = await fetch(WEB_APP_URL, { 
@@ -931,6 +946,18 @@
             previewImg.classList.add('hidden');
         }
         setupPermissions(sessionStorage.getItem('osda_user_email'));
+        // 🔒 ล็อกช่องเลขที่หนังสือและวันที่ ไม่ให้แก้ไข
+    const docNoInput = document.getElementById('f_docNo');
+    const docDateInput = document.getElementById('f_docDate');
+    
+    if (docNoInput) {
+        docNoInput.readOnly = true;
+        docNoInput.classList.add('bg-slate-100', 'pointer-events-none');
+    }
+    if (docDateInput) {
+        docDateInput.readOnly = true; // หรือใช้ disabled = true ก็ได้ครับ
+        docDateInput.classList.add('bg-slate-100', 'pointer-events-none');
+    }
     };
 
     window.deleteRecord = async (id) => {
