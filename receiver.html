@@ -214,9 +214,17 @@
 </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><label class="form-label">จาก (ผู้ส่ง)</label><input type="text" id="f_sender" class="input-box" required placeholder="ระบุหน่วยงานหรือผู้ส่ง..."></div>
-                <div><label class="form-label">ถึง (ผู้รับ)</label><input type="text" id="f_receiver" class="input-box" required placeholder="ระบุผู้รับปลายทาง..."></div>
-            </div>
+    <div>
+        <label class="form-label">จาก (ผู้ส่ง)</label>
+        <input type="text" id="f_sender" class="input-box" list="sender_list" required placeholder="ระบุหน่วยงานหรือผู้ส่ง...">
+        <datalist id="sender_list"></datalist>
+    </div>
+    <div>
+        <label class="form-label">ถึง (ผู้รับ)</label>
+        <input type="text" id="f_receiver" class="input-box" list="receiver_list" required placeholder="ระบุผู้รับปลายทาง...">
+        <datalist id="receiver_list"></datalist>
+    </div>
+</div>
             
             <div>
                 <div class="flex justify-between items-center mb-1 px-1">
@@ -294,8 +302,7 @@
     let currentPage = 1;
     const itemsPerPage = 6; 
     let filteredRecords = []; 
-    let recentHistoryData = { subjects: [], remarks: [] }; // 🌟 ตัวแปรเก็บประวัติล่าสุดจากส่วนกลาง
-
+    let recentHistoryData = { subjects: [], remarks: [], senders: [], receivers: [] }; // 🌟 ตัวแปรเก็บประวัติล่าสุดจากส่วนกลาง
     const USER_MAPPING = {
         "66040181@kmitl.ac.th": "เขต",
         "66040190@kmitl.ac.th": "มดแดง",
@@ -458,17 +465,31 @@
 
     // 🌟 ฟังก์ชันดึงประวัติจาก Google Sheets มารอไว้ในความจำหน้าเว็บ
     async function fetchRecentHistoryFromCloud() {
-        // โชว์สถานะกำลังโหลด
-        document.getElementById('syncHistoryStatus').classList.remove('hidden');
-        try {
-            // ส่ง sheetType=receiver ไปบอกหลังบ้านว่าขอดูชีทรับ
-            const response = await fetch(`${WEB_APP_URL}?action=getRecentHistory&sheetType=receiver`);
-            const result = await response.json();
-            if (result.status === 'success') {
-                recentHistoryData.subjects = result.subjects || [];
-                recentHistoryData.remarks = result.remarks || [];
+    // โชว์สถานะกำลังโหลด
+    document.getElementById('syncHistoryStatus').classList.remove('hidden');
+    try {
+        // ส่ง sheetType=receiver ไปบอกหลังบ้านว่าขอดูชีทรับ
+        const response = await fetch(`${WEB_APP_URL}?action=getRecentHistory&sheetType=receiver`);
+        const result = await response.json();
+        if (result.status === 'success') {
+            recentHistoryData.subjects = result.subjects || [];
+            recentHistoryData.remarks = result.remarks || [];
+            recentHistoryData.senders = result.senders || [];
+            recentHistoryData.receivers = result.receivers || [];
+
+            // 🌟 นำชื่อผู้ส่งล่าสุดมาใส่ในกล่องเลือกอัตโนมัติ
+            let senderList = document.getElementById('sender_list');
+            if (senderList && result.senders) {
+                senderList.innerHTML = result.senders.map(name => `<option value="${name}"></option>`).join('');
             }
-        } catch (err) {
+
+            // 🌟 นำชื่อผู้รับล่าสุดมาใส่ในกล่องเลือกอัตโนมัติ
+            let receiverList = document.getElementById('receiver_list');
+            if (receiverList && result.receivers) {
+                receiverList.innerHTML = result.receivers.map(name => `<option value="${name}"></option>`).join('');
+            }
+        }
+    } catch (err) {
             console.error("Fetch history error:", err);
         } finally {
             // ซ่อนสถานะกำลังโหลด
