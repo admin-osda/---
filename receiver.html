@@ -338,7 +338,7 @@
         "admin-osda@kmitl.ac.th" 
     ];
 
-    function setupPermissions(userEmail) {
+   function setupPermissions(userEmail) {
         const cleanEmail = userEmail ? userEmail.trim().toLowerCase() : "";
         const isAdmin = ADMIN_EMAILS.includes(cleanEmail);
 
@@ -346,8 +346,15 @@
         const sysDateInput = document.getElementById("f_sysDate");    
         const btnReuse = document.getElementById("btnReuseSeq");
 
+        // 🎯 ดึงปุ่มรับปกติ, รับย้อนหลัง และปุ่มบันทึกในฟอร์ม มาควบคุมสิทธิ์
+        const btnNormal = document.querySelector("button[onclick*='new']");
+        const btnBackfill = document.querySelector("button[onclick*='backfill']");
+        const btnSubmit = document.getElementById("btnSubmit");
+
         if (!isAdmin) {
-            // โหมดคนทั่วไป: ล็อกตาย ห้ามคลิก
+            // ==========================================
+            // 🔒 โหมดคนทั่วไป: ล็อกตายทุกจุดที่สำคัญ
+            // ==========================================
             if(docNumberInput) { 
                 docNumberInput.readOnly = true; docNumberInput.disabled = true;
                 docNumberInput.style.setProperty('background-color', '#e9ecef', 'important');
@@ -357,18 +364,69 @@
             }
             if(sysDateInput) { sysDateInput.readOnly = true; sysDateInput.disabled = true; }
             if(btnReuse) btnReuse.style.display = 'none';
+
+            // ❌ 1. ล็อกปุ่ม "รับหนังสือปกติ" หน้าแรก
+            if (btnNormal) {
+                btnNormal.disabled = true;
+                btnNormal.style.setProperty('opacity', '0.4', 'important');
+                btnNormal.style.setProperty('pointer-events', 'none', 'important');
+                btnNormal.style.setProperty('cursor', 'not-allowed', 'important');
+            }
+            // ❌ 2. ล็อกปุ่ม "รับหนังสือย้อนหลัง" หน้าแรก
+            if (btnBackfill) {
+                btnBackfill.disabled = true;
+                btnBackfill.style.setProperty('opacity', '0.4', 'important');
+                btnBackfill.style.setProperty('pointer-events', 'none', 'important');
+                btnBackfill.style.setProperty('cursor', 'not-allowed', 'important');
+            }
+            // ❌ 3. ล็อกปุ่ม "บันทึกข้อมูล" ด้านในฟอร์ม
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.style.setProperty('opacity', '0.5', 'important');
+                btnSubmit.style.setProperty('pointer-events', 'none', 'important');
+                btnSubmit.style.setProperty('cursor', 'not-allowed', 'important');
+                btnSubmit.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> ไม่มีสิทธิ์บันทึกข้อมูล`;
+            }
+
         } else {
-            // โหมดแอดมิน: แก้ไขได้ พิมพ์ได้
+            // ==========================================
+            // 🔓 โหมดแอดมิน: เปิดสิทธิ์ให้ใช้งานได้ตามปกติ
+            // ==========================================
             if(docNumberInput) { 
                 docNumberInput.readOnly = false; docNumberInput.disabled = false;
                 docNumberInput.style.setProperty('background-color', '#fff7ed', 'important');
                 docNumberInput.style.setProperty('border-color', '#ea580c', 'important');
-                docNumberInput.style.setProperty('color', '#ea580c', 'important');
+                docNumberInput.style.setProperty('color', '#c2410c', 'important');
                 docNumberInput.style.setProperty('pointer-events', 'auto', 'important');
             }
             if(sysDateInput) { sysDateInput.readOnly = false; sysDateInput.disabled = false; }
             if(btnReuse) btnReuse.style.display = 'flex';
+
+            //  เปิดปุ่ม "รับหนังสือปกติ"
+            if (btnNormal) {
+                btnNormal.disabled = false;
+                btnNormal.style.removeProperty('opacity');
+                btnNormal.style.removeProperty('pointer-events');
+                btnNormal.style.removeProperty('cursor');
+            }
+            //  เปิดปุ่ม "รับหนังสือย้อนหลัง"
+            if (btnBackfill) {
+                btnBackfill.disabled = false;
+                btnBackfill.style.removeProperty('opacity');
+                btnBackfill.style.removeProperty('pointer-events');
+                btnBackfill.style.removeProperty('cursor');
+            }
+            //  เปิดปุ่ม "บันทึกข้อมูล"
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.style.removeProperty('opacity');
+                btnSubmit.style.removeProperty('pointer-events');
+                btnSubmit.style.removeProperty('cursor');
+                btnSubmit.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล`;
+            }
         }
+        // อัปเดตไอคอนกุญแจ/บันทึกของระบบ
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
@@ -890,12 +948,34 @@
             const hasDriveLink = r.fileUrl && r.fileUrl.startsWith('http');
             const driveBtnHtml = hasDriveLink ? `<button onclick="window.open('${r.fileUrl}', '_blank')" class="px-3 py-1 bg-white border border-slate-300 text-blue-600 hover:border-blue-500 hover:text-blue-600 rounded text-[11px] font-bold transition-all shadow-sm">ดูไฟล์</button>` : '';
 
+            // 🎯 1. รายชื่อแอดมินทั้งหมด (ปรับสิทธิ์ตรงนี้ได้เลย)
+            const CURRENT_ADMINS = [
+                "66040181@kmitl.ac.th",
+                "admin-osda@kmitl.ac.th",
+                "sharnjira.ki@kmitl.ac.th"
+            ];
+            
+            // 🎯 2. ดึงอีเมลคนที่ล็อกอินอยู่จาก Session จริงของระบบนาย
+            const currentUserEmail = sessionStorage.getItem('osda_user_email') || localStorage.getItem('userEmail') || ''; 
+            
+            // 🎯 3. เช็กสิทธิ์ว่าเป็นแอดมินไหม
+            const isAdmin = CURRENT_ADMINS.includes(currentUserEmail.trim().toLowerCase());
+
+            // 🎯 4. สร้างโค้ดปุ่มแบบมีเงื่อนไข (ถ้าไม่ใช่แอดมิน ปุ่มจะว่างเปล่าทันที)
+            const editBtnHtml = isAdmin ? `<button onclick="editRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 rounded text-[11px] font-bold transition-all shadow-sm">แก้ไข</button>` : '';
+            const deleteBtnHtml = isAdmin ? `<button onclick="deleteRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-red-500 hover:text-red-600 rounded text-[11px] font-bold transition-all shadow-sm">ลบ</button>` : '';
+
+            // 🎯 5. พ่น HTML ออกหน้าจอแบบถูกต้อง ไร้บั๊กปีกกาเบี้ยว
             container.innerHTML += `
                 <div class="${rowClass} table-row-hover p-4 grid grid-cols-12 gap-4 items-center border-b border-slate-100 min-h-[80px]">
                     <div class="col-span-2 flex justify-center items-center"><span class="font-black text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-sm shadow-sm"># ${r.seq}</span></div>
                     <div class="col-span-4 flex flex-col justify-center gap-0.5">
                         <div class="font-bold text-slate-800 text-sm leading-snug">${r.subject}</div>
                         <div class="text-[11px] text-slate-500 flex flex-wrap gap-x-3 gap-y-0.5"><span><b>จาก:</b> ${r.sender || '-'}</span><span><b>ถึง:</b> ${r.receiver || '-'}</span></div>
+                        <div class="text-[11px] text-slate-400 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                            <span>เลขที่: <b class="text-orange-600">${r.docNo || '-'}</b></span>
+                            <span>ลงวันที่: <b class="text-slate-600">${formatThaiDateShort(r.docDate)}</b></span>
+                        </div>
                         ${userTrackHtml}
                     </div>
                     <div class="col-span-2 flex justify-center items-center">${statusBadge}</div>
@@ -904,15 +984,11 @@
                         <div class="text-[10px] text-slate-400">เวลา: ${cleanTimeFormat(r.logTime) || '-'}</div>
                     </div>
                     <div class="col-span-2 flex flex-row flex-wrap justify-center items-center gap-2">
-                        <button onclick="editRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 rounded text-[11px] font-bold transition-all shadow-sm">แก้ไข</button>
+                        ${editBtnHtml}
                         ${driveBtnHtml}
-                        <button onclick="deleteRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-red-500 hover:text-red-600 rounded text-[11px] font-bold transition-all shadow-sm">ลบ</button>
+                        ${deleteBtnHtml}
                     </div>
                 </div>
-                <div class="text-[11px] text-slate-400 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-    <span>เลขที่: <b class="text-orange-600">${r.docNo || '-'}</b></span>
-    <span>ลงวันที่: <b class="text-slate-600">${formatThaiDateShort(r.docDate)}</b></span>
-</div>
             `;
         });
         lucide.createIcons();
