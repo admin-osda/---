@@ -266,10 +266,13 @@
 // 1. ใส่รายชื่ออีเมลแอดมิน (มีแค่คุณ กับ พี่ต้น)
 const ADMIN_EMAILS = [
     "66040181@kmitl.ac.th", 
-    "admin-osda@kmitl.ac.th" 
+    "admin-osda@kmitl.ac.th",
+    "sharnjira.ki@kmitl.ac.th" 
 ];
 
 // 2. ฟังก์ชันล็อก/ปลดล็อกช่องกรอกข้อมูล
+// 2. ฟังก์ชันล็อก/ปลดล็อกช่องกรอกข้อมูลและปุ่มบันทึก
+// 2. ฟังก์ชันล็อก/ปลดล็อกช่องกรอกข้อมูลและปุ่มหน้าแรก
 function setupPermissions(userEmail) {
     const cleanEmail = userEmail ? userEmail.trim().toLowerCase() : "";
     const isAdmin = ADMIN_EMAILS.includes(cleanEmail);
@@ -278,24 +281,55 @@ function setupPermissions(userEmail) {
     const docDateInput = document.getElementById("f_logDate");    
     const docTimeInput = document.getElementById("f_logTime");    
     const sysDateInput = document.getElementById("f_sysDate");    
+    const btnReuse = document.getElementById("btnReuseSeq");
+
+    // 🎯 ดึงปุ่มใหญ่ 2 อันหน้าแรก และปุ่มบันทึกในฟอร์ม มาจัดการสิทธิ์
+    const btnNormal = document.querySelector("button[onclick=\"openForm('new')\"]");
+    const btnBackfill = document.querySelector("button[onclick=\"openForm('backfill')\"]");
+    const btnSubmit = document.getElementById("btnSubmit");
 
     // 🌟 ให้ทุกคนแก้วันที่/เวลา เพื่อลงย้อนหลังได้เสมอ
     if(docDateInput) { docDateInput.readOnly = false; docDateInput.style.backgroundColor = "#ffffff"; }
     if(docTimeInput) { docTimeInput.readOnly = false; docTimeInput.style.backgroundColor = "#ffffff"; }
 
     if (!isAdmin) {
-        // 🔒 โหมดคนทั่วไป: ปิดตายช่องเลขที่ และ วันที่ระบบ (ห้ามพิมพ์ ห้ามโฟกัส)
+        // 🔒 โหมดคนทั่วไป: ปิดตายช่องเลขที่ 
         if(docNumberInput) { 
             docNumberInput.readOnly = true; 
-            docNumberInput.disabled = true; // ท่าไม้ตาย ล็อกการคลิก
+            docNumberInput.disabled = true; 
             docNumberInput.style.setProperty('background-color', '#e9ecef', 'important');
             docNumberInput.style.setProperty('border-color', '#cbd5e1', 'important');
             docNumberInput.style.setProperty('color', '#94a3b8', 'important');
             docNumberInput.style.setProperty('cursor', 'not-allowed', 'important');
+            docNumberInput.style.setProperty('pointer-events', 'none', 'important');
         }
         if(sysDateInput) { sysDateInput.readOnly = true; sysDateInput.disabled = true; }
+        if(btnReuse) btnReuse.style.display = 'none';
+
+        // ❌ 1. ล็อกปุ่มใหญ่หน้าแรก (ส่งปกติ / ส่งย้อนหลัง) สีจะจางและกดไม่ได้
+        if (btnNormal) {
+            btnNormal.disabled = true;
+            btnNormal.style.setProperty('opacity', '0.4', 'important');
+            btnNormal.style.setProperty('pointer-events', 'none', 'important');
+            btnNormal.style.setProperty('cursor', 'not-allowed', 'important');
+        }
+        if (btnBackfill) {
+            btnBackfill.disabled = true;
+            btnBackfill.style.setProperty('opacity', '0.4', 'important');
+            btnBackfill.style.setProperty('pointer-events', 'none', 'important');
+            btnBackfill.style.setProperty('cursor', 'not-allowed', 'important');
+        }
+
+        // ❌ 2. ล็อกปุ่ม "บันทึกข้อมูล" ด้านในฟอร์ม (กันเหนียวเผื่อหลุดเข้ามาได้)
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.style.setProperty('opacity', '0.5', 'important');
+            btnSubmit.style.setProperty('pointer-events', 'none', 'important');
+            btnSubmit.style.setProperty('cursor', 'not-allowed', 'important');
+            btnSubmit.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> ไม่มีสิทธิ์บันทึกข้อมูล`;
+        }
     } else {
-        // 🔓 โหมดแอดมิน: ปลดล็อก พิมพ์และคลิกได้ปกติ
+        // 🔓 โหมดแอดมิน: ปลดล็อกทุกอย่างให้กลับมาแจ่มเหมือนเดิม!
         if(docNumberInput) { 
             docNumberInput.readOnly = false; 
             docNumberInput.disabled = false;
@@ -303,10 +337,38 @@ function setupPermissions(userEmail) {
             docNumberInput.style.setProperty('border-color', '#ea580c', 'important');
             docNumberInput.style.setProperty('color', '#ea580c', 'important');
             docNumberInput.style.setProperty('cursor', 'text', 'important');
+            docNumberInput.style.setProperty('pointer-events', 'auto', 'important');
         }
         if(sysDateInput) { sysDateInput.readOnly = false; sysDateInput.disabled = false; }
+        if(btnReuse) btnReuse.style.display = 'flex';
+
+        //  เปิดปุ่มใหญ่ 2 อันหน้าแรกให้กดได้ปกติ
+        if (btnNormal) { 
+            btnNormal.disabled = false; 
+            btnNormal.style.removeProperty('opacity'); 
+            btnNormal.style.removeProperty('pointer-events'); 
+            btnNormal.style.removeProperty('cursor');
+        }
+        if (btnBackfill) { 
+            btnBackfill.disabled = false; 
+            btnBackfill.style.removeProperty('opacity'); 
+            btnBackfill.style.removeProperty('pointer-events'); 
+            btnBackfill.style.removeProperty('cursor');
+        }
+
+        //  เปิดปุ่มบันทึก
+        if (btnSubmit) { 
+            btnSubmit.disabled = false; 
+            btnSubmit.style.removeProperty('opacity'); 
+            btnSubmit.style.removeProperty('pointer-events'); 
+            btnSubmit.style.removeProperty('cursor');
+            btnSubmit.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล`;
+        }
     }
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
     const isLocalFile = window.location.protocol === 'file:';
     if (!isLocalFile && sessionStorage.getItem('osda_auth') !== 'true') {
         window.location.href = 'index.html';
@@ -404,6 +466,7 @@ function setupPermissions(userEmail) {
     window.onload = async function() {
         lucide.createIcons();
         updateUserBadge();
+        setupPermissions(sessionStorage.getItem('osda_user_email'));
         await syncDataFromCloud(); 
         
         setInterval(async () => {
@@ -545,6 +608,7 @@ function setupPermissions(userEmail) {
         hideAllHistoryDropdowns();
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
         document.getElementById('pageHub').classList.add('active');
+        etupPermissions(sessionStorage.getItem('osda_user_email'));
         syncDataFromCloud(); 
     };
 
@@ -824,15 +888,24 @@ function setupPermissions(userEmail) {
             const driveBtnHtml = hasDriveLink ? `<button onclick="window.open('${r.fileUrl}', '_blank')" class="px-3 py-1 bg-white border border-slate-300 text-blue-600 hover:border-blue-500 hover:text-blue-600 rounded text-[11px] font-bold transition-all shadow-sm">ดูไฟล์</button>` : '';
 
             // 🌟 เงื่อนไขซ่อน/โชว์ปุ่ม แอดมินเห็นครบ คนทั่วไปเห็นแค่ดูไฟล์
-            let actionButtonsHtml = driveBtnHtml; 
+           // 🌟 1. สร้างปุ่มดูรายละเอียด (ทุกคนกดได้)
+            const viewBtnHtml = `<button onclick="viewRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-emerald-500 hover:text-emerald-600 rounded text-[11px] font-bold transition-all shadow-sm">ดูข้อมูล</button>`;
+
+            // 🌟 2. เงื่อนไขซ่อน/โชว์ปุ่ม คนทั่วไปเห็นแค่ปุ่ม "ดูข้อมูล" กับ "ดูไฟล์"
+            let actionButtonsHtml = `
+                ${viewBtnHtml}
+                ${driveBtnHtml}
+            `; 
+            
+            // 🌟 3. ถ้าเป็นแอดมิน จะเห็นปุ่ม แก้ไข และ ลบ ด้วย
             if (isAdmin) {
                 actionButtonsHtml = `
+                    ${viewBtnHtml}
                     <button onclick="editRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 rounded text-[11px] font-bold transition-all shadow-sm">แก้ไข</button>
                     ${driveBtnHtml}
                     <button onclick="deleteRecord('${r.id}')" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:border-red-500 hover:text-red-600 rounded text-[11px] font-bold transition-all shadow-sm">ลบ</button>
                 `;
             }
-
             container.innerHTML += `
                 <div class="${rowClass} table-row-hover p-4 grid grid-cols-12 gap-4 items-center border-b border-slate-100 min-h-[80px]">
                     <div class="col-span-2 flex justify-center items-center"><span class="font-black text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-sm shadow-sm"># ${r.seq}</span></div>
@@ -1014,6 +1087,93 @@ function setupPermissions(userEmail) {
                     seqInput.style.setProperty('background-color', '#dcfce3', 'important');
                     setTimeout(() => seqInput.style.setProperty('background-color', '#fff7ed', 'important'), 1000);
                 }
+            }
+        });
+    }
+    // ==========================================
+    // 🔍 ฟังก์ชันกดดูรายละเอียดทั้งหมด (Popup)
+    // ==========================================
+    window.viewRecord = (id) => {
+        const data = db.find(x => String(x.id) === String(id));
+        if(!data) return;
+
+        // แปลงสถานะให้สวยๆ
+        const isBackfill = data.status === 'ส่งย้อนหลัง' || (data.seq && data.seq.includes('.'));
+        const statusBadge = isBackfill 
+            ? `<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-bold">ส่งย้อนหลัง</span>`
+            : `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">ส่งแล้ว</span>`;
+
+        // เช็กไฟล์แนบ
+        const hasFile = data.fileUrl && data.fileUrl.startsWith('http');
+        const fileHtml = hasFile 
+            ? `<div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100 text-center"><a href="${data.fileUrl}" target="_blank" class="text-blue-600 font-bold hover:underline flex items-center justify-center gap-2"><i data-lucide="image" class="w-4 h-4"></i> คลิกดูไฟล์แนบเอกสาร</a></div>`
+            : `<div class="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100 text-center text-slate-400 text-sm">ไม่มีไฟล์แนบ</div>`;
+
+        const htmlContent = `
+            <div class="text-left space-y-3 mt-4 text-sm text-slate-700">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="text-slate-500">เลขทะเบียนส่ง:</span>
+                    <span class="font-black text-lg text-orange-600"># ${data.seq}</span>
+                </div>
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="text-slate-500">สถานะ:</span>
+                    ${statusBadge}
+                </div>
+                <div class="border-b pb-2">
+                    <span class="text-slate-500 block mb-1">เรื่อง:</span>
+                    <span class="font-bold text-slate-800">${data.subject}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 border-b pb-2">
+                    <div>
+                        <span class="text-slate-500 block mb-1">จาก (ผู้ส่ง):</span>
+                        <span class="font-bold">${data.sender || '-'}</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block mb-1">ถึง (ผู้รับ):</span>
+                        <span class="font-bold">${data.receiver || '-'}</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 border-b pb-2">
+                    <div>
+                        <span class="text-slate-500 block mb-1">เลขที่เอกสาร:</span>
+                        <span class="font-bold text-slate-800">${data.docNo || '-'}</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block mb-1">ลงวันที่ในเอกสาร:</span>
+                        <span class="font-bold">${data.docDate ? formatThaiDateShort(data.docDate) : '-'}</span>
+                    </div>
+                </div>
+                <div class="border-b pb-2">
+                    <span class="text-slate-500 block mb-1">หมายเหตุ / การปฏิบัติ:</span>
+                    <span class="font-bold ${data.remark ? 'text-slate-800' : 'text-slate-400'}">${data.remark || '-'}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 border-b pb-2 bg-slate-50 p-2 rounded">
+                    <div>
+                        <span class="text-slate-500 block text-xs mb-1">เวลาส่งเข้าระบบ:</span>
+                        <span class="font-bold text-xs text-slate-800">${formatThaiDateShort(data.logDate)} ${data.logTime ? cleanTimeFormat(data.logTime) : ''}</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block text-xs mb-1">บันทึกโดย:</span>
+                        <span class="font-bold text-xs text-blue-600">${getUserDisplayName(data.creator)}</span>
+                    </div>
+                </div>
+                ${fileHtml}
+            </div>
+        `;
+
+        Swal.fire({
+            title: 'รายละเอียดหนังสือส่ง',
+            html: htmlContent,
+            showCloseButton: true,
+            showConfirmButton: true,
+            confirmButtonText: 'ปิดหน้าต่าง',
+            confirmButtonColor: '#475569',
+            customClass: {
+                popup: 'rounded-2xl',
+                title: 'text-xl font-black text-slate-800 border-b pb-3',
+            },
+            didOpen: () => {
+                if(typeof lucide !== 'undefined') lucide.createIcons();
             }
         });
     }
