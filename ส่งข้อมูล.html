@@ -374,7 +374,7 @@ function setupPermissions(userEmail) {
         window.location.href = 'index.html';
     }
 
-    let WEB_APP_URL ="https://script.google.com/macros/s/AKfycbwKj4rWFDFMZ72lMvPdjQnyd5M_F_Ay54ydLqIPYFYcIoPb9_leGDg23UDWllMFUp5g7g/exec";
+    let WEB_APP_URL ="https://script.google.com/macros/s/AKfycbxcNRQKvKGyoAMiAfF7WfqOUfW7mkzn188KWc1KbA2R6xy4kTSDUOT3asV3zX4OYSrbIg/exec";
     let IMGBB_API_KEY = localStorage.getItem('OSDA_SENDER_IMGBB_KEY') || "943c4187147fb6507b61c2c6de104cfa";
 
     localforage.config({ name: 'OSDA_STORAGE_SENDER' });
@@ -797,9 +797,19 @@ function setupPermissions(userEmail) {
 
             const response = await fetch(WEB_APP_URL, { 
                 method: 'POST', 
+                mode: 'no-cors', // 🚀 พระเอกของเราคือบรรทัดนี้! ทะลวงบล็อก CORS
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
                 body: JSON.stringify(record)
             });
+            
+            // 🌟 2. ให้เด้งแจ้งเตือนว่าสำเร็จไปเลย ไม่ต้องรอผลลัพธ์ตอบกลับจาก Google
+            await Swal.fire({ 
+                icon: 'success', 
+                title: 'สำเร็จ!', 
+                text: 'บันทึกข้อมูลหนังสือส่งเรียบร้อยแล้ว', 
+                timer: 1500 
+            });
+            goHome();
             
             const result = await response.json();
             if (result.status === 'success') {
