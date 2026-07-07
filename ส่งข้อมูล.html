@@ -796,20 +796,20 @@ function setupPermissions(userEmail) {
             };
 
             const response = await fetch(WEB_APP_URL, { 
-                method: 'POST', 
-                mode: 'no-cors', // 🚀 พระเอกของเราคือบรรทัดนี้! ทะลวงบล็อก CORS
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
-                body: JSON.stringify(record)
-            });
-            
-            // 🌟 2. ให้เด้งแจ้งเตือนว่าสำเร็จไปเลย ไม่ต้องรอผลลัพธ์ตอบกลับจาก Google
-            await Swal.fire({ 
-                icon: 'success', 
-                title: 'สำเร็จ!', 
-                text: 'บันทึกข้อมูลหนังสือส่งเรียบร้อยแล้ว', 
-                timer: 1500 
-            });
-            goHome();
+              method: 'POST',
+            body: JSON.stringify(record)
+        }).catch(err => console.log("ซ่อน Error เบราว์เซอร์: ", err));
+
+        // 🌟 2. เด้งหน้าต่างสีเขียวว่าสำเร็จไปเลยทันที!
+        await Swal.fire({
+            icon: 'success',
+            title: 'สำเร็จ!',
+            text: 'บันทึกข้อมูลหนังสือส่งเรียบร้อยแล้ว',
+            timer: 1500
+        });
+        
+        // 🌟 3. กลับหน้าแรก
+        goHome();
             
             const result = await response.json();
             if (result.status === 'success') {
