@@ -608,7 +608,7 @@ function setupPermissions(userEmail) {
         hideAllHistoryDropdowns();
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
         document.getElementById('pageHub').classList.add('active');
-        etupPermissions(sessionStorage.getItem('osda_user_email'));
+        setupPermissions(sessionStorage.getItem('osda_user_email'));
         syncDataFromCloud(); 
     };
 
